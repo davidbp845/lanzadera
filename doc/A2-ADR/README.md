@@ -8,7 +8,7 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 
 | ADR | Decisión | Estado |
 |---|---|---|
-| [0001](0001-contenedor-local-con-los-datos.md) | Contenedor local con los datos; código y documentación, submódulo | Aceptada |
+| [0001](0001-contenedor-local-con-los-datos.md) | Contenedor local con los datos; código y documentación, submódulo | Aceptada; el submódulo `home`, superado por 0012 |
 | [0002](0002-arranque-y-parada-delegados-en-cada-proyecto.md) | Arranque y parada delegados en el script o servicio de cada proyecto | Aceptada |
 | [0003](0003-el-puerto-como-fuente-de-verdad.md) | El puerto como fuente de verdad del estado | Aceptada |
 | [0004](0004-registro-de-proyectos-como-dato.md) | Registro de proyectos como dato (`datos/proyectos.toml`) | Aceptada |
@@ -19,3 +19,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0009](0009-negocios-como-filas-de-la-lanzadera.md) | Negocios como filas de la Lanzadera, sin página propia | Aceptada |
 | [0010](0010-demo-publica-de-solo-lectura.md) | Demo pública de solo lectura con datos de ejemplo (`HOME_LAUNCHER_DEMO`) | Aceptada |
 | [0011](0011-licencia-mit.md) | Licencia MIT para el repo | Aceptada |
+| [0012](0012-lanzadera-sustituye-a-home.md) | El repo público `lanzadera` sustituye a `home`, que se archiva | Propuesta |

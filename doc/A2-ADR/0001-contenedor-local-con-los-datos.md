@@ -36,4 +36,4 @@ home/                      ← repo CONTENEDOR, solo local (sin remoto, hook pre
 
 ## Estado
 
-Aceptada (2026-10-23).
+Aceptada (2026-10-23). El submódulo `davidbp845/home`, superado por [0012](0012-lanzadera-sustituye-a-home.md): ahora es `davidbp845/lanzadera`.
