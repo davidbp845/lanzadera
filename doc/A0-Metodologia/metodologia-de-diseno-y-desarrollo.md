@@ -12,7 +12,7 @@ Es un guion de arranque, no una norma cerrada. Cada etapa se describe con:
 - **Índice** (secciones esperadas)
 - **Resultado** (qué queda al terminar)
 - **Columna de kanban** (proyecto GitHub #9, campo Status: Backlog/Ready/In progress/In review/Done)
-- **Skill/comando de Claude Code** si existe uno. Los `/dev:*` son los del método común (plugin `dev@metodo`), que toman los datos del proyecto de la sección `## Método` del `CLAUDE.md` del contenedor.
+- **Skill/comando de Claude Code** si existe uno. Los `/dev:*` son los del método común (plugin `dev@metodo`), que toman los datos del proyecto de la sección `## Método` del `CLAUDE.md` del contenedor. Ese plugin es privado: no hace falta para usar ni desarrollar la app, y quien no lo tenga sigue las mismas etapas a mano.
 
 ### Por qué estos tres niveles
 
