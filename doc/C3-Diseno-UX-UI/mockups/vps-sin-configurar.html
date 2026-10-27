@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VPS — sin configurar</title>
+</head>
+<body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&amp;family=Source+Sans+3:wght@400;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#F63366}a:hover{color:#c4204f}
+</style>
+<div style="display: flex; flex-wrap: wrap; min-height: 720px; font-family: 'Source Sans 3', sans-serif; color: #31333F; background: #ffffff;">
+
+  <nav aria-label="Menú" style="flex: 1 1 244px; max-width: 336px; background: #F0F2F6; padding: 56px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;">
+    <span style="font-size: 14px; color: #31333F;">Menú</span>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px;"><input type="radio" name="menu" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">Proyectos</label>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px;"><input type="radio" name="menu" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">Negocios</label>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px;"><input type="radio" name="menu" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">Enlaces</label>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px; font-weight: 600;"><input type="radio" name="menu" checked="checked" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">VPS</label>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 64px 24px 80px; box-sizing: border-box;">
+    <div style="max-width: 736px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+      <h1 style="margin: 0; font-size: 44px; font-weight: 700; line-height: 1.2;">VPS</h1>
+
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 8px; background: #E6F0FB; color: #0B4A8B; font-size: 16px;">
+        <span>No hay servidores. Añade uno a <code style="font-family: 'Source Code Pro', monospace; font-size: 14px;">datos/vps.toml</code> con el alias de <code style="font-family: 'Source Code Pro', monospace; font-size: 14px;">~/.ssh/config</code>:</span>
+        <pre style="margin: 0; padding: 16px; background: #ffffff; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">[[vps]]
+nombre = "VPS"
+host = "vps"</pre>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

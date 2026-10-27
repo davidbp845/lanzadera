@@ -1,0 +1,21 @@
+# Servicio de usuario de systemd para el launcher (arranca solo al iniciar sesión).
+# Instalación (fuera del repo):
+#   cp deploy/home-streamlit.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now home-streamlit
+# Ojo al reiniciarlo: systemd para todo su grupo de control, incluidos los proyectos que
+# se arrancaron desde el launcher (no los que tienen servicio propio).
+[Unit]
+Description=Panel Streamlit (home)
+After=network.target
+# Si el código está en un disco que se monta aparte, su punto de montaje:
+# RequiresMountsFor=/ruta/al/disco
+
+[Service]
+Type=simple
+WorkingDirectory=%h/lanzadera
+ExecStart=%h/lanzadera/venv/bin/python -m streamlit run app.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

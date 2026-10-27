@@ -1,0 +1,27 @@
+# Entornos virtuales
+venv/
+.venv/
+
+# Bytecode y cachés
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Secretos
+.env
+.streamlit/secrets.toml
+
+# /datos/ vive en el repo contenedor solo local, fuera de este repo; se ignora por si
+# acaso (ver doc/A2-ADR/0001). Los fixtures de tests/ son ficticios y sí se versionan.
+/datos/
+/enlaces.csv
+/proyectos.toml
+
+# Editores / sistema
+.vscode/
+.idea/
+*.swp
+.DS_Store
+.~lock.*#
+.obsidian

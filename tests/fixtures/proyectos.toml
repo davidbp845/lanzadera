@@ -1,0 +1,39 @@
+# Registro ficticio para los tests: mismo formato que datos/proyectos.toml.
+
+[[proyecto]]
+nombre = "Esta app"
+slug = "esta"
+puerto = 9501
+ruta = "Apps/esta/esta"
+
+[[proyecto]]
+nombre = "Simple"
+slug = "simple"
+puerto = 9502
+ruta = "Apps/simple"
+cmd = ["./start.sh"]
+env = { VARIABLE = "valor" }
+
+[[proyecto]]
+nombre = "Multi"
+slug = "multi"
+puerto = 9503
+intentos_espera_inicio = 60
+ruta = "Otros/multi"
+cmd = ["./up.sh"]
+cmd_detener = ["./down.sh"]
+enlaces = [
+  { etiqueta = "UI", puerto = 9504 },
+  { etiqueta = "API", puerto = 9503, ruta_url = "/health" },
+]
+
+[negocios]
+ruta = "Otros/negocios"
+intentos_espera_inicio = 100
+
+[negocios.single]
+nombre = "Único"
+slug = "unico"
+puerto = 9505
+ruta = "Otros/negocios"
+cmd = ["./up.sh"]

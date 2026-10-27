@@ -1,0 +1,12 @@
+descripcion,enlace,etiquetas
+Streamlit docs,https://docs.streamlit.io,docs
+Streamlit API reference,https://docs.streamlit.io/develop/api-reference,docs
+Streamlit forum,https://discuss.streamlit.io,community
+Streamlit gallery,https://streamlit.io/gallery,community
+Altair example gallery,https://altair-viz.github.io/gallery/index.html,docs;charts
+Vega-Lite documentation,https://vega.github.io/vega-lite/docs,docs;charts
+Python documentation,https://docs.python.org/3,python;docs
+Ruff rules,https://docs.astral.sh/ruff/rules,python;tools
+pytest documentation,https://docs.pytest.org,python;tools
+GitHub Projects,https://docs.github.com/en/issues/planning-and-tracking-with-projects,tools
+systemd user services,https://wiki.archlinux.org/title/Systemd/User,tools

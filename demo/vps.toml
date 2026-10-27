@@ -1,0 +1,5 @@
+# Servidor ficticio de la demo pública (ADR-0010): su estado sale de demo/vps.txt, sin SSH.
+
+[[vps]]
+nombre = "Demo VPS"
+host = "demo-vps"

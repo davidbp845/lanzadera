@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VPS — conectado</title>
+</head>
+<body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&amp;family=Source+Sans+3:wght@400;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#F63366}a:hover{color:#c4204f}
+.boton-refrescar:hover{border-color:#F63366;color:#F63366}
+@keyframes giro{to{transform:rotate(360deg)}}
+.girando{animation:giro 0.8s linear infinite}
+</style>
+<div style="display: flex; flex-wrap: wrap; min-height: 1560px; font-family: 'Source Sans 3', sans-serif; color: #31333F; background: #ffffff;">
+
+  <nav aria-label="Menú" style="flex: 1 1 244px; max-width: 336px; background: #F0F2F6; padding: 56px 24px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;">
+    <span style="font-size: 14px; color: #31333F;">Menú</span>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px;"><input type="radio" name="menu" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">Proyectos</label>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px;"><input type="radio" name="menu" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">Negocios</label>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px;"><input type="radio" name="menu" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">Enlaces</label>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 16px; min-height: 32px; font-weight: 600;"><input type="radio" name="menu" checked="checked" style="accent-color: #F63366; width: 16px; height: 16px; margin: 0;">VPS</label>
+  </nav>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 64px 24px 80px; box-sizing: border-box;">
+    <div style="max-width: 736px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+      <h1 style="margin: 0; font-size: 44px; font-weight: 700; line-height: 1.2;">VPS</h1>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 8px; border-bottom: 1px solid #E6E9EF;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 16px; min-height: 44px;">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #21A366; display: inline-block;"></span>conectado</span>
+            <code style="font-family: 'Source Code Pro', monospace; font-size: 14px; background: #F0F2F6; padding: 2px 6px; border-radius: 4px; color: #09AB3B;">vps</code>
+            <span style="font-size: 14px; color: #5F6272;">actualizado a las 10:42:07 (1,4 s)</span>
+          </div>
+        <button class="boton-refrescar" type="button" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; font-family: inherit; font-size: 16px; color: #31333F; background: #ffffff; border: 1px solid rgba(49,51,63,0.2); border-radius: 8px; cursor: pointer;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"></path><path d="M21 4v5h-5"></path></svg>
+          Refrescar
+        </button>
+      </div>
+
+      <section style="display: flex; flex-direction: column; gap: 8px; opacity: 1;">
+        <h3 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Sistema</h3>
+        <pre style="margin: 0; padding: 16px; background: #F0F2F6; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">host     vps
+SO       Debian GNU/Linux 12 (bookworm)
+kernel   6.1.0-26-amd64
+uptime   up 23 days, 4 hours, 12 minutes
+carga    0.18  0.22  0.19   (2 CPU)</pre>
+
+        <h3 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Memoria</h3>
+        <pre style="margin: 0; padding: 16px; background: #F0F2F6; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">               total        used        free      shared  buff/cache   available
+Mem:           3.8Gi       1.6Gi       412Mi        24Mi       2.1Gi       2.2Gi
+Swap:          1.0Gi        96Mi       928Mi</pre>
+
+        <h3 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Disco</h3>
+        <pre style="margin: 0; padding: 16px; background: #F0F2F6; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        38G   21G   16G  58% /
+/dev/sda15      124M   12M  113M  10% /boot/efi</pre>
+
+        <h3 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Servicios con fallo</h3>
+        <pre style="margin: 0; padding: 16px; background: #F0F2F6; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">0 servicios con fallo</pre>
+
+        <h3 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Procesos con más RAM</h3>
+        <pre style="margin: 0; padding: 16px; background: #F0F2F6; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">    PID USER      %MEM    RSS COMMAND
+    912 postgres   9.8   382M postgres
+   1507 root       6.1   238M dockerd
+   2240 www-data   4.4   171M node
+    874 root       2.0    78M containerd
+   3311 caddy      1.2    47M caddy</pre>
+
+        <h3 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Contenedores</h3>
+        <pre style="margin: 0; padding: 16px; background: #F0F2F6; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">NAMES        STATUS         PORTS
+caddy        Up 23 days     0.0.0.0:80-&gt;80/tcp, 0.0.0.0:443-&gt;443/tcp
+app          Up 6 days      127.0.0.1:3000-&gt;3000/tcp
+postgres     Up 23 days     5432/tcp</pre>
+
+        <h3 style="margin: 16px 0 0; font-size: 20px; font-weight: 600;">Últimos accesos</h3>
+        <pre style="margin: 0; padding: 16px; background: #F0F2F6; border-radius: 8px; font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; color: #31333F; overflow-x: auto;">david    pts/0    203.0.113.24     Thu Oct 23 10:42   still logged in
+david    pts/0    203.0.113.24     Wed Oct 22 19:05 - 19:31  (00:26)
+david    pts/1    203.0.113.24     Tue Oct 21 08:14 - 08:20  (00:06)</pre>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

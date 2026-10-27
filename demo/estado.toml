@@ -1,0 +1,55 @@
+# Estado ficticio de la demo pública (ADR-0010): lo que fuera de la demo sale de los
+# puertos, `ps`/`ss`, `gh`, `git log`, `dev_up.sh --listar` y /proc/meminfo.
+
+# Puertos en escucha.
+activos = [8501, 8510, 8511, 8520, 8540, 8541, 8570, 3100, 3101, 8000]
+
+# RAM total de la máquina, en GB.
+memoria_total_gb = 16
+
+# Lo que devolvería `dev_up.sh --listar` en el proyecto de negocios.
+negocios = [
+  { id = "acme", front = 3100, panel = 3101, api = 8000 },
+  { id = "bloom", front = 3110, panel = 3111, api = 8010 },
+]
+
+# Repositorio y tablero de cada proyecto (por slug; `negocios`, el de los negocios),
+# con sus items por estado: Backlog, Ready, In progress, In review, Done.
+[github.launchpad]
+repo = "https://github.com/davidbp845/lanzadera"
+cuenta = [3, 2, 1, 2, 41]
+[github.notes]
+repo = "https://github.com/example/notes-vault"
+cuenta = [6, 1, 0, 1, 23]
+[github.budget]
+repo = "https://github.com/example/budget-tracker"
+cuenta = [9, 3, 2, 0, 58]
+[github.contacts]
+repo = "https://github.com/example/contacts-sync"
+cuenta = [4, 0, 0, 3, 77]
+[github.mail]
+repo = "https://github.com/example/mail-triage"
+cuenta = [2, 4, 1, 1, 35]
+[github.jobs]
+repo = "https://github.com/example/job-hunt"
+cuenta = [5, 0, 0, 0, 12]
+[github.books]
+repo = "https://github.com/example/bookkeeping"
+cuenta = [1, 1, 0, 0, 9]
+[github.negocios]
+repo = "https://github.com/example/business-core"
+cuenta = [7, 2, 3, 1, 140]
+
+# RAM (MB) por servicio de cada proyecto activo; `puerto` falta en lo que no escucha.
+[ram]
+launchpad = [{ etiqueta = "app", puerto = 8501, mb = 182 }]
+notes = [
+  { etiqueta = "panel", puerto = 8510, mb = 214 },
+  { etiqueta = "telegram bot", puerto = 8511, mb = 96 },
+]
+budget = [{ etiqueta = "app", puerto = 8520, mb = 341 }]
+mail = [
+  { etiqueta = "panel", puerto = 8540, mb = 268 },
+  { etiqueta = "MCP server", puerto = 8541, mb = 74 },
+]
+books = [{ etiqueta = "app", puerto = 8570, mb = 158 }]

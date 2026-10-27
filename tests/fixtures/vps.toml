@@ -1,0 +1,5 @@
+# Servidores ficticios para los tests: mismo formato que datos/vps.toml.
+
+[[vps]]
+nombre = "Pruebas"
+host = "vps-pruebas"

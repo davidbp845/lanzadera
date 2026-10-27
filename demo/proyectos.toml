@@ -1,0 +1,75 @@
+# Registro ficticio de la demo pública (ADR-0010): mismo formato que datos/proyectos.toml.
+# Las rutas no existen; en la demo no se leen.
+
+[[proyecto]]
+nombre = "Launchpad"
+slug = "launchpad"
+puerto = 8501
+ruta = "Apps/launchpad"
+
+[[proyecto]]
+nombre = "Notes vault"
+slug = "notes"
+puerto = 8510
+ruta = "Apps/notes-vault"
+cmd = ["./start.sh"]
+enlaces = [
+  { etiqueta = "panel", puerto = 8510 },
+  { etiqueta = "telegram bot", puerto = 8511, ruta_url = "/health" },
+]
+
+[[proyecto]]
+nombre = "Budget tracker"
+slug = "budget"
+puerto = 8520
+ruta = "Apps/budget-tracker"
+cmd = ["./start.sh"]
+
+[[proyecto]]
+nombre = "Contacts sync"
+slug = "contacts"
+puerto = 8530
+ruta = "Apps/contacts-sync"
+cmd = ["./start.sh"]
+
+[[proyecto]]
+nombre = "Mail triage"
+slug = "mail"
+puerto = 8540
+ruta = "Apps/mail-triage"
+cmd = ["./start.sh"]
+enlaces = [
+  { etiqueta = "panel", puerto = 8540 },
+  { etiqueta = "MCP server", puerto = 8541 },
+]
+
+[[proyecto]]
+nombre = "Job hunt"
+slug = "jobs"
+puerto = 8550
+ruta = "Apps/job-hunt"
+cmd = ["./start.sh"]
+
+[[proyecto]]
+nombre = "AI agents course"
+slug = "course"
+puerto = 8560
+ruta = "Courses/ai-agents"
+cmd = ["./start.sh"]
+
+[[proyecto]]
+nombre = "Bookkeeping"
+slug = "books"
+puerto = 8570
+ruta = "Clients/bookkeeping"
+cmd = ["./start.sh"]
+
+[negocios]
+ruta = "Clients/business-core"
+
+[negocios.single]
+nombre = "Business"
+slug = "business"
+puerto = 3001
+ruta = "Clients/business-core"
+cmd = ["./scripts/dev_up.sh"]

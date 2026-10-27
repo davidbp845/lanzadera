@@ -1,0 +1,14 @@
+[server]
+port = 8501
+address = "127.0.0.1"  # solo local: el panel arranca y para procesos y no tiene autenticación
+headless = true       # no intenta abrir el navegador
+
+[theme]
+base = "light"
+primaryColor = "#F63366"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+
+[client]
+toolbarMode = "minimal"

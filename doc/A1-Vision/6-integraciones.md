@@ -1,0 +1,38 @@
+# 6. Integraciones
+
+## Proyectos hermanos
+
+Para arrancar y parar, home solo conoce de cada proyecto lo que dice su fila del registro. Para los enlaces a GitHub de la Lanzadera lee además, sin escribir nada, el remoto git de su carpeta (o del primer submódulo) y la línea `Tablero` de su `CLAUDE.md`; si faltan, el proyecto sale sin enlace. El recuento de cada tablero se pide a la API de GitHub con `gh` (solo lectura), así que necesita `gh` con sesión para el usuario que ejecuta `home-streamlit`. Para el mapa de actividad lee `git log` de su carpeta y de sus submódulos, también sin escribir. El contrato con cada uno es:
+
+- un **puerto** fijo en su propia configuración (no se pasa desde home, salvo los Astro, que lo reciben con `--port`);
+- un **comando de arranque** no interactivo, ejecutable desde su carpeta (p. ej. `dev_up.sh --skip-checks`, para que no se quede esperando un `read -p` con la salida en `/dev/null`);
+- si matar a quien escucha el puerto no basta, un **comando de parada** propio.
+
+Si un proyecto cambia su estructura (p. ej. pasa a contenedor + submódulo), se corrige su `ruta` en el registro; si cambia su forma de arrancar, se cambia su script, no home ([ADR-0002](../A2-ADR/0002-arranque-y-parada-delegados-en-cada-proyecto.md)).
+
+## heruka-flow (filas de negocios de la Lanzadera)
+
+- `scripts/dev_up.sh --listar`: una línea por negocio, `id<TAB>front<TAB>panel<TAB>api`.
+- `scripts/dev_up.sh --skip-checks --negocios a,b`: arranca los elegidos.
+- `scripts/dev_down.sh`: para todo el stack. Lo hace por patrón de comando, así que también para cualquier otro proyecto que use `npm run dev` o `astro dev`.
+
+Ver [ADR-0005](../A2-ADR/0005-negocios-los-puertos-los-decide-heruka-flow.md).
+
+## VPS (SSH)
+
+- `ssh -o BatchMode=yes -o ConnectTimeout=5 <host> sh -s`, con `scripts/estado_vps.sh` por la entrada estándar; tiempo máximo, 15 s.
+- `host` es un alias de `~/.ssh/config`. Tiene que entrar sin interacción desde `home-streamlit.service` (clave sin frase o agente accesible desde systemd de usuario); si no, la página muestra el error de ssh.
+- La sección Contenedores sale solo si el servidor tiene `docker`, y necesita que el usuario SSH pueda usarlo (grupo `docker`); si no, muestra el error de permiso. Estar en el grupo `docker` equivale a ser root en el servidor: si no se quiere dar, la sección muestra el error y el resto de la página funciona igual.
+
+Ver [ADR-0008](../A2-ADR/0008-pagina-vps-estado-por-ssh-bajo-demanda.md).
+
+## systemd (usuario)
+
+- home corre como `home-streamlit.service` (copia en `deploy/`), con `enable`: arranca al iniciar sesión.
+- Un proyecto con servicio propio lleva en su fila `systemctl --user start|stop <servicio>`.
+
+Ver [ADR-0006](../A2-ADR/0006-el-launcher-como-servicio-de-systemd.md).
+
+## Terminal
+
+`/crear-atajo` mantiene en `~/.bashrc` una función por proyecto de `Data/` (`_proyecto Grupo/carpeta`), que entra en la carpeta y abre `claude`. home es la carpeta del contenedor (`Apps/home`).

@@ -1,0 +1,21 @@
+# A2 — Decisiones de arquitectura (ADR)
+
+Nivel A2 de la [metodología](../A0-Metodologia/metodologia-de-diseno-y-desarrollo.md). Un fichero por decisión: Contexto · Decisión · Alternativas descartadas · Consecuencias · Estado.
+
+Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones que ya estaban en el código y en su historial.
+
+## Decisiones
+
+| ADR | Decisión | Estado |
+|---|---|---|
+| [0001](0001-contenedor-local-con-los-datos.md) | Contenedor local con los datos; código y documentación, submódulo | Aceptada |
+| [0002](0002-arranque-y-parada-delegados-en-cada-proyecto.md) | Arranque y parada delegados en el script o servicio de cada proyecto | Aceptada |
+| [0003](0003-el-puerto-como-fuente-de-verdad.md) | El puerto como fuente de verdad del estado | Aceptada |
+| [0004](0004-registro-de-proyectos-como-dato.md) | Registro de proyectos como dato (`datos/proyectos.toml`) | Aceptada |
+| [0005](0005-negocios-los-puertos-los-decide-heruka-flow.md) | Negocios: los puertos los decide heruka-flow | Aceptada; la página propia, superada por 0009 |
+| [0006](0006-el-launcher-como-servicio-de-systemd.md) | El launcher como servicio de usuario de systemd | Aceptada |
+| [0007](0007-estructura-plana-sin-hexagonal.md) | Estructura plana (`app.py` + `config/`), sin hexagonal | Aceptada |
+| [0008](0008-pagina-vps-estado-por-ssh-bajo-demanda.md) | Página VPS: estado por SSH bajo demanda, servidores en `datos/vps.toml` | Aceptada |
+| [0009](0009-negocios-como-filas-de-la-lanzadera.md) | Negocios como filas de la Lanzadera, sin página propia | Aceptada |
+| [0010](0010-demo-publica-de-solo-lectura.md) | Demo pública de solo lectura con datos de ejemplo (`HOME_LAUNCHER_DEMO`) | Aceptada |
+| [0011](0011-licencia-mit.md) | Licencia MIT para el repo | Aceptada |

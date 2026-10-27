@@ -1,0 +1,32 @@
+### Sistema
+host     demo-vps
+OS       Debian GNU/Linux 12 (bookworm)
+kernel   6.1.0-26-amd64
+uptime   up 23 days, 4 hours, 12 minutes
+load     0.18  0.22  0.19   (2 CPU)
+### Memoria
+         total    used    free  available
+Mem:     3.8Gi   1.6Gi   412Mi      2.2Gi
+Swap:    1.0Gi    96Mi   928Mi
+### Disco
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1        38G   21G   16G  58% /
+/dev/sda15      124M   12M  113M  10% /boot/efi
+### Servicios con fallo
+0 failed services
+### Procesos con más RAM
+    PID USER      %MEM    RSS COMMAND
+    912 postgres   9.8   382M postgres
+   1507 root       6.1   238M dockerd
+   2240 www-data   4.4   171M node
+    874 root       2.0    78M containerd
+   3311 caddy      1.2    47M caddy
+### Contenedores
+NAMES        STATUS         PORTS
+caddy        Up 23 days     0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+app          Up 6 days      127.0.0.1:3000->3000/tcp
+postgres     Up 23 days     5432/tcp
+### Últimos accesos
+demo     pts/0    203.0.113.24     Tue Oct 27 10:42   still logged in
+demo     pts/0    203.0.113.24     Mon Oct 26 19:05 - 19:31  (00:26)
+demo     pts/1    203.0.113.24     Sun Oct 25 08:14 - 08:20  (00:06)
