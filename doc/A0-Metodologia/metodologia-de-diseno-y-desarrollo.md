@@ -62,7 +62,7 @@ El disparador es práctico: hay un proyecto hermano nuevo (o uno existente cambi
 
 Solo para proyectos **no estándar**: los que no se arrancan con un único `./start.sh` y se paran matando a quien escucha su puerto.
 
-- **Documento**: `doc/B1-Fichas-proyecto/<n>-<slug>.md`, redactada **antes** de añadir la fila.
+- **Documento**: `doc-local/<n>-<slug>.md` del contenedor, junto a `datos/`, a partir de la plantilla `doc/B1-Fichas-proyecto/0-plantilla.md`; redactada **antes** de añadir la fila.
 - **Índice**:
 	1. Qué es y dónde vive (ruta, repo, si es submódulo)
 	2. Servicios y puertos (cuál es el principal y por qué)
