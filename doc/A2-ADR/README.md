@@ -19,4 +19,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0009](0009-negocios-como-filas-de-la-lanzadera.md) | Negocios como filas de la Lanzadera, sin página propia | Aceptada |
 | [0010](0010-demo-publica-de-solo-lectura.md) | Demo pública de solo lectura con datos de ejemplo (`HOME_LAUNCHER_DEMO`) | Aceptada |
 | [0011](0011-licencia-mit.md) | Licencia MIT para el repo | Aceptada |
-| [0012](0012-lanzadera-sustituye-a-home.md) | El repo público `lanzadera` sustituye a `home`, que se archiva | Propuesta |
+| [0012](0012-lanzadera-sustituye-a-home.md) | El repo público `lanzadera` sustituye a `home`, que se archiva | Aceptada |

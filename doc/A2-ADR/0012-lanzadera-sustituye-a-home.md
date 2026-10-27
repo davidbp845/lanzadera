@@ -30,4 +30,4 @@ Las dos copias tienen el mismo código, salvo la URL del repo y el `.service` de
 
 ## Estado
 
-Propuesta (2026-10-27) — issue [#1](https://github.com/davidbp845/lanzadera/issues/1).
+Aceptada (2026-10-27) — issue [#1](https://github.com/davidbp845/lanzadera/issues/1).
