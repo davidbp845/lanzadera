@@ -4,7 +4,7 @@ A local launcher for the Streamlit apps (and anything else that listens on a por
 
 ![Launchpad demo: the launchpad with its charts, the charts collapsed, links, VPS, local RAM and the Spanish interface](doc/capturas/demo.gif)
 
-*The read-only demo, with sample data. Run it yourself in two commands: [Try the demo](#try-the-demo).*
+*The read-only demo, with sample data. Open it at [lanzadera.streamlit.app](https://lanzadera.streamlit.app) or run it yourself in two commands: [Try the demo](#try-the-demo).*
 
 ## What it does (and what it doesn't)
 
@@ -33,6 +33,8 @@ A local launcher for the Streamlit apps (and anything else that listens on a por
 | ![Local page](doc/capturas/local.png) | ![VPS page](doc/capturas/vps.png) |
 
 ## Try the demo
+
+Live at [lanzadera.streamlit.app](https://lanzadera.streamlit.app). To run it locally:
 
 ```bash
 python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
