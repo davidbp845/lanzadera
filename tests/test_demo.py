@@ -198,3 +198,18 @@ def test_actualizar_tableros_refresca_tambien_el_grafico(modo_demo, monkeypatch)
     at.button(key="actualizar_tableros").click().run()
     despues = next(c.value for c in at.caption if "open issues" in c.value)
     assert antes != despues
+
+
+def test_un_fallo_de_gh_no_se_queda_en_cache(modo_demo, monkeypatch):
+    red = {"hay": False}
+
+    def recuento(owner, numero):
+        return {"Backlog": 1, "Ready": 0, "In progress": 0, "In review": 0, "Done": 0} if red["hay"] else None
+
+    monkeypatch.setattr(demo, "recuento", recuento)
+    vacio = textos.TEXTOS["en"]["issues.vacio"]
+    at = _abrir()
+    assert any(vacio in c.value for c in at.caption)
+    red["hay"] = True
+    at.run()
+    assert not any(vacio in c.value for c in at.caption)

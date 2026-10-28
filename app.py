@@ -174,11 +174,19 @@ def _github(path: str) -> tuple[str | None, tuple[str, int] | None]:
 
 
 @st.cache_data(ttl=600, show_spinner=False)
-def _recuentos(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], dict[str, int] | None]:
+def _recuentos_en_cache(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], dict[str, int] | None]:
     # Una consulta por tablero, todas a la vez (~0,6 s cada una); el buscador no las repite.
     consultar = demo.recuento if DEMO else github.recuento
     with ThreadPoolExecutor() as hilos:
         return dict(zip(tableros, hilos.map(lambda tablero: consultar(*tablero), tableros), strict=True))
+
+
+def _recuentos(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], dict[str, int] | None]:
+    recuentos = _recuentos_en_cache(tableros)
+    # Un fallo de `gh` (sin red al arrancar) no se guarda: el siguiente rerun vuelve a consultar.
+    if None in recuentos.values():
+        _recuentos_en_cache.clear(tableros)
+    return recuentos
 
 
 def _tableros() -> tuple[tuple[str, int], ...]:
@@ -703,7 +711,7 @@ def render_proyectos() -> None:
                 t("actualizar_tableros"),
                 icon=":material/refresh:",
                 key="actualizar_tableros",
-                on_click=_recuentos.clear,
+                on_click=_recuentos_en_cache.clear,
             )
     # Contador y orden en su propia línea, que separa la barra de filtros de la tabla.
     with st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute"):
