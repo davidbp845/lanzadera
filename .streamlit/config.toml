@@ -11,4 +11,4 @@ secondaryBackgroundColor = "#F0F2F6"
 textColor = "#262730"
 
 [client]
-toolbarMode = "minimal"
+toolbarMode = "auto"  # menú completo (Rerun, Clear cache) en localhost; en la demo pública, el mínimo

@@ -9,7 +9,7 @@ Nivel C de la [metodología](../A0-Metodologia/metodologia-de-diseno-y-desarroll
 
 Descrito en [5 — Panel Streamlit](../A1-Vision/5-panel-streamlit.md). Pendiente: capturas de referencia de las páginas (Lanzadera, Enlaces, VPS, Local), guardadas aquí como `NN Página — estado.png`.
 
-Tema: claro, color primario `#F63366`, barra de herramientas mínima (`.streamlit/config.toml`). Las etiquetas de Enlaces usan la paleta categórica validada de la skill dataviz, en orden fijo.
+Tema: claro, color primario `#F63366`, barra de herramientas automática (`.streamlit/config.toml`): completa en localhost, mínima en la demo pública. Las etiquetas de Enlaces usan la paleta categórica validada de la skill dataviz, en orden fijo.
 
 Tablero: [tablero (proyecto GitHub #9)](https://github.com/users/davidbp845/projects/9)
 
