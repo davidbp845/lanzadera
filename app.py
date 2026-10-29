@@ -310,6 +310,21 @@ def _pintar_github(columna, path: Path) -> None:
     columna.markdown(f"<div>{texto}</div>", unsafe_allow_html=True)
 
 
+def _oscurecer_para_blanco(color: str) -> str:
+    # Oscurece lo justo para que el texto blanco llegue a 4,5:1 (WCAG AA): el amarillo necesita
+    # bajar mucho más que el azul, así que un porcentaje fijo dejaría uno ilegible u otro negro.
+    rgb = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+
+    def luminancia(c: list[float]) -> float:
+        lineal = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * lineal[0] + 0.7152 * lineal[1] + 0.0722 * lineal[2]
+
+    factor = 1.0
+    while 1.05 / (luminancia([x * factor for x in rgb]) + 0.05) < 4.5:
+        factor -= 0.05
+    return "#" + "".join(f"{round(x * factor * 255):02x}" for x in rgb)
+
+
 def _colorear_pastillas(tipos: list[str]) -> None:
     # st.pills no admite un color por opción: CSS por posición sobre los botones del grupo.
     # Las de tipo (carpetas y Negocios) van con la paleta de Enlaces; las de estado, sin tocar.
@@ -328,10 +343,11 @@ def _colorear_pastillas(tipos: list[str]) -> None:
         reglas.append(f"{boton} {{ color: #31333F; border-color: {color}; background: {color}1f; }}")
         # aria-pressed en las de selección múltiple, aria-checked en las de una sola. Streamlit
         # da su propio color al texto de la activa, también en el <p> de dentro: se fuerza el
-        # oscuro, que sobre el color al 50 % pasa de 6:1 en los cinco estados.
+        # blanco sobre el color oscurecido.
         activo = f'{boton}[aria-pressed="true"], {boton}[aria-checked="true"]'
-        reglas.append(f"{activo} {{ background: {color}80; border-width: 2px; font-weight: 600; }}")
-        reglas.append(f"{activo}, {activo.replace(', ', ' *, ')} * {{ color: #31333F !important; }}")
+        fondo = _oscurecer_para_blanco(color)
+        reglas.append(f"{activo} {{ background: {fondo}; border-color: {fondo}; font-weight: 600; }}")
+        reglas.append(f"{activo}, {activo.replace(', ', ' *, ')} * {{ color: #fff !important; }}")
     st.html("<style>\n" + "\n".join(reglas) + "\n</style>")
 
 
