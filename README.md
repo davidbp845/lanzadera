@@ -66,7 +66,7 @@ enlaces = [                  # optional: one link per service, and the switch wa
 
 A project without `cmd` is the launcher itself. A project without `puerto` has no app: its row only shows its GitHub repo and board, with no state or switch. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: Its rows have type `heruka-flow`; without it there are no business rows and no `heruka-flow` filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
 
-**`enlaces.csv`**: `descripcion,enlace,etiquetas`, with several tags separated by `;`.
+**`enlaces.csv`**: `descripcion,enlace,etiquetas`, with several tags separated by `;`. Other apps add a row with `python3 scripts/anadir_enlace.py "description" "url" "tag1;tag2"`: it rejects URLs without `http(s)://` and duplicates (exit code `1`) and never commits.
 
 **`vps.toml`**: `[[vps]]` entries with `nombre` and `host`, an alias from `~/.ssh/config`. Credentials never go in the file. What runs on the server is always [`scripts/estado_vps.sh`](scripts/estado_vps.sh), read-only.
 
@@ -102,7 +102,7 @@ config/             # paths, demo mode, language, and the registry / VPS loaders
 vps.py              # SSH query to the VPS, sections and meters
 ram.py              # real RAM (RSS) of each running project
 github.py           # each project's repo and board, and board counts with gh
-scripts/            # estado_vps.sh, the read-only script sent to the VPS
+scripts/            # estado_vps.sh, the read-only script sent to the VPS; anadir_enlace.py, to add a link
 tests/              # pytest and AppTest, with fictitious fixtures
 deploy/             # systemd user service
 doc/                # design docs (in Spanish): vision, ADRs, mockups

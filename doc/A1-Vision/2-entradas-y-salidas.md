@@ -5,7 +5,7 @@
 | Entrada | Dónde | Quién la cambia |
 |---|---|---|
 | Registro de proyectos | `datos/proyectos.toml` | A mano o con Claude, al dar de alta un proyecto (nivel B) |
-| Enlaces | `datos/enlaces.csv` | `/crear-enlace`, o a mano |
+| Enlaces | `datos/enlaces.csv` | `scripts/anadir_enlace.py` (lo llaman `/crear-enlace` y las automatizaciones de otras apps), o a mano |
 | Servidores de la página VPS | `datos/vps.toml` | A mano o con Claude |
 | Estado del VPS | `ssh <host> sh -s` con `scripts/estado_vps.sh` | El servidor |
 | Estado de cada proyecto | Puertos TCP en `127.0.0.1` (`socket.connect_ex`) | Los propios proyectos al arrancar o parar |
@@ -29,4 +29,4 @@ Los ficheros de `datos/` se releen en cada recarga de la página (Streamlit reej
 | Arranque/parada de negocios | `dev_down.sh` y `dev_up.sh --skip-checks --negocios a,b` |
 | Páginas del panel | Streamlit en `:8501` |
 
-home no escribe en `datos/`: solo lo lee. Los cambios en `datos/` los hacen el usuario o Claude, y se versionan con commit en el contenedor.
+El panel no escribe en `datos/`: solo lo lee. Los cambios en `datos/` los hacen el usuario, Claude o, para añadir enlaces, quien llame a `scripts/anadir_enlace.py`; se versionan con commit en el contenedor, que el script no hace.

@@ -28,6 +28,12 @@
 
 Ciclo de issues (nivel C, [metodología](../A0-Metodologia/metodologia-de-diseno-y-desarrollo.md)): los `/dev:*` del método común (plugin `dev@metodo`), con los datos del proyecto en la sección `## Método` del `CLAUDE.md` del contenedor: `/dev:crear-issue`, `/dev:detectar-bug`, `/dev:resolver-issue`, `/dev:sprint`, `/dev:cerrar-issue`, `/dev:crear-decision`, `/dev:nueva-vision`…
 
+## Desde otras apps
+
+| Caso | Cómo |
+|---|---|
+| Dar de alta un enlace | `python3 <lanzadera>/scripts/anadir_enlace.py "descripcion" "url" "etiquetas"` (contrato en [integraciones](6-integraciones.md#otras-apps-alta-de-enlaces)) |
+
 ## Trabajo de desarrollo
 
 | Caso | Nivel |
