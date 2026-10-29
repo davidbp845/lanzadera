@@ -21,3 +21,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0011](0011-licencia-mit.md) | Licencia MIT para el repo | Aceptada |
 | [0012](0012-lanzadera-sustituye-a-home.md) | El repo público `lanzadera` sustituye a `home`, que se archiva | Aceptada |
 | [0013](0013-host-opcional-en-los-enlaces.md) | Host opcional en los enlaces de un proyecto (`admin.localhost`) | Aceptada |
+| [0014](0014-proyectos-sin-app-solo-enlaces.md) | Proyectos sin app: `puerto` opcional y fila de solo enlaces | Propuesta |
