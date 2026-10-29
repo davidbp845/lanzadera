@@ -66,6 +66,11 @@ def test_conserva_las_claves_opcionales(registro):
     assert registro["proyectos"][1]["env"] == {"VARIABLE": "valor"}
 
 
+@pytest.mark.parametrize(("indice", "tipo"), [(0, "Streamlit"), (2, "Wagtail"), (3, None)])
+def test_tipo_opcional(registro, indice, tipo):
+    assert registro["proyectos"][indice]["tipo"] == tipo
+
+
 def test_negocios(registro):
     assert registro["intentos_negocios"] == 100
     assert registro["heruka_life_single"]["path"] == RAIZ / "Otros/negocios"

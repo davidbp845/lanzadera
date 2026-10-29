@@ -4,12 +4,14 @@
 [[proyecto]]
 nombre = "Launchpad"
 slug = "launchpad"
+tipo = "Streamlit"
 puerto = 8501
 ruta = "Apps/launchpad"
 
 [[proyecto]]
 nombre = "Notes vault"
 slug = "notes"
+tipo = "Streamlit"
 puerto = 8510
 ruta = "Apps/notes-vault"
 cmd = ["./start.sh"]
@@ -21,6 +23,7 @@ enlaces = [
 [[proyecto]]
 nombre = "Budget tracker"
 slug = "budget"
+tipo = "Streamlit"
 puerto = 8520
 ruta = "Apps/budget-tracker"
 cmd = ["./start.sh"]
@@ -28,6 +31,7 @@ cmd = ["./start.sh"]
 [[proyecto]]
 nombre = "Contacts sync"
 slug = "contacts"
+tipo = "Streamlit"
 puerto = 8530
 ruta = "Apps/contacts-sync"
 cmd = ["./start.sh"]
@@ -35,6 +39,7 @@ cmd = ["./start.sh"]
 [[proyecto]]
 nombre = "Mail triage"
 slug = "mail"
+tipo = "Streamlit"
 puerto = 8540
 ruta = "Apps/mail-triage"
 cmd = ["./start.sh"]
@@ -46,6 +51,7 @@ enlaces = [
 [[proyecto]]
 nombre = "Job hunt"
 slug = "jobs"
+tipo = "Astro"
 puerto = 8550
 ruta = "Apps/job-hunt"
 cmd = ["./start.sh"]
@@ -53,6 +59,7 @@ cmd = ["./start.sh"]
 [[proyecto]]
 nombre = "AI agents course"
 slug = "course"
+tipo = "Astro"
 puerto = 8560
 ruta = "Courses/ai-agents"
 cmd = ["./start.sh"]
@@ -60,6 +67,7 @@ cmd = ["./start.sh"]
 [[proyecto]]
 nombre = "Bookkeeping"
 slug = "books"
+tipo = "Wagtail"
 puerto = 8570
 ruta = "Clients/bookkeeping"
 cmd = ["./start.sh"]

@@ -74,7 +74,7 @@ def test_filtra_por_texto(lanzadera, buscar, contador):
 
 def test_negocios_multitenant_como_filas(lanzadera):
     at = _abrir()
-    at.button_group(key="filtros_lanzadera").set_value(["Negocios"]).run()
+    at.button_group(key="filtros_lanzadera").set_value(["heruka-flow"]).run()
     assert _contador(at) == "3 de 7"
     assert [n for n in _nombres(at) if "egocio" in n] == ["**Todos los negocios**", "**Negocio a**", "**Negocio b**"]
 
@@ -82,9 +82,31 @@ def test_negocios_multitenant_como_filas(lanzadera):
 def test_sin_multitenant_la_fila_single(lanzadera):
     lanzadera.listar = ""
     at = _abrir()
-    at.button_group(key="filtros_lanzadera").set_value(["Negocios"]).run()
+    at.button_group(key="filtros_lanzadera").set_value(["heruka-flow"]).run()
     assert _contador(at) == "1 de 5"
     assert "**Único**" in _nombres(at)
+
+
+def test_pildoras_de_carpeta_tipo_y_estado(lanzadera):
+    opciones = _abrir().button_group(key="filtros_lanzadera").options
+    assert opciones == ["Apps", "Otros", "heruka-flow", "Streamlit", "Wagtail", "activo", "parado"]
+
+
+@pytest.mark.parametrize(
+    ("filtro", "contador"),
+    [
+        (["Streamlit"], "2 de 7"),
+        # OR entre tipos; las filas sin tipo (Docs) quedan fuera.
+        (["Streamlit", "Wagtail"], "3 de 7"),
+        # AND con la carpeta.
+        (["Wagtail", "Apps"], "0 de 7"),
+    ],
+)
+def test_filtra_por_tipo(lanzadera, filtro, contador):
+    at = _abrir()
+    at.button_group(key="filtros_lanzadera").set_value(filtro).run()
+    assert not at.exception
+    assert _contador(at) == contador
 
 
 @pytest.mark.parametrize(
@@ -144,7 +166,7 @@ def test_sin_negocios_en_el_registro_no_hay_filas_ni_pildora(sin_negocios):
     at = _abrir()
     assert not at.exception
     assert _contador(at) == "4 de 4"
-    assert "Negocios" not in at.button_group(key="filtros_lanzadera").options
+    assert "heruka-flow" not in at.button_group(key="filtros_lanzadera").options
 
 
 def test_sin_negocios_local_mide_solo_los_proyectos(sin_negocios, monkeypatch):

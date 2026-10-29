@@ -279,8 +279,8 @@ def _buscar(key: str, placeholder: str) -> str:
 
 
 ESTADOS = ["activo", "parado"]
-# Píldora de tipo: solo las filas de heruka-flow multi-tenant o single (ADR-0009).
-NEGOCIOS = "Negocios"
+# Tipo de las filas de negocios, multi-tenant o single: no se escribe en el registro (ADR-0015).
+TIPO_NEGOCIOS = "heruka-flow"
 
 
 def _sin_enlace(texto: str, explicacion: str) -> str:
@@ -328,11 +328,11 @@ def _oscurecer_para_blanco(color: str) -> str:
     return "#" + "".join(f"{round(x * factor * 255):02x}" for x in rgb)
 
 
-def _colorear_pastillas(tipos: list[str]) -> None:
+def _colorear_pastillas(categorias: list[str]) -> None:
     # st.pills no admite un color por opción: CSS por posición sobre los botones del grupo.
-    # Las de tipo (carpetas y Negocios) van con la paleta de Enlaces; las de estado, sin tocar.
+    # Las de carpeta y tipo van con la paleta de Enlaces; las de estado, sin tocar.
     reglas = []
-    for i, color in enumerate(PALETA_CATEGORIAS[: len(tipos)], start=1):
+    for i, color in enumerate(PALETA_CATEGORIAS[: len(categorias)], start=1):
         boton = f".st-key-filtros_lanzadera button:nth-child({i})"
         reglas.append(f"{boton} {{ color: {color}; border-color: {color}; background: {color}14; }}")
         # aria-pressed en las de selección múltiple, aria-checked en las de una sola.
@@ -539,7 +539,7 @@ def _render_negocio(negocio: dict, negocios: list[dict], activos: list[dict]) ->
 
 
 def _filas_lanzadera() -> list[dict]:
-    """Proyectos y negocios con lo que necesitan el filtro (texto, carpeta, estado, tipo) y la tabla."""
+    """Proyectos y negocios con lo que necesitan el filtro (texto, carpeta, tipo, estado) y la tabla."""
     filas = []
     for proyecto in PROYECTOS:
         activo = esta_activo(proyecto)
@@ -548,7 +548,7 @@ def _filas_lanzadera() -> list[dict]:
                 "texto": f"{proyecto['nombre']} {proyecto['ruta']} {proyecto['puerto'] or ''}",
                 "carpeta": _carpeta_raiz(proyecto),
                 "activo": activo,
-                "negocio": False,
+                "tipo": proyecto["tipo"],
                 "tablero": _github(str(proyecto["path"]))[1],
                 "pintar": lambda proyecto=proyecto, activo=activo: _render_proyecto(proyecto, activo),
             }
@@ -566,7 +566,7 @@ def _filas_lanzadera() -> list[dict]:
                 "texto": f"{HERUKA_LIFE_SINGLE['nombre']} {HERUKA_LIFE_SINGLE['ruta']} {HERUKA_LIFE_SINGLE['puerto']}",
                 "carpeta": carpeta,
                 "activo": activo,
-                "negocio": True,
+                "tipo": TIPO_NEGOCIOS,
                 "tablero": _github(str(HERUKA_LIFE_SINGLE["path"]))[1],
                 "pintar": lambda: _render_proyecto(HERUKA_LIFE_SINGLE, activo),
             }
@@ -579,7 +579,7 @@ def _filas_lanzadera() -> list[dict]:
             "texto": f"{t('todos_negocios')} " + " ".join(n["id"] for n in negocios),
             "carpeta": carpeta,
             "activo": bool(activos),
-            "negocio": True,
+            "tipo": TIPO_NEGOCIOS,
             "tablero": _github(str(HERUKA_FLOW))[1],
             "pintar": lambda: _render_negocios_todos(negocios, activos),
         }
@@ -590,7 +590,7 @@ def _filas_lanzadera() -> list[dict]:
                 "texto": f"{t('negocio', id=negocio['id'])} {HERUKA_LIFE_SINGLE['ruta']} {negocio['panel']}",
                 "carpeta": carpeta,
                 "activo": negocio in activos,
-                "negocio": True,
+                "tipo": TIPO_NEGOCIOS,
                 "tablero": _github(str(HERUKA_FLOW))[1],
                 "pintar": lambda negocio=negocio: _render_negocio(negocio, negocios, activos),
             }
@@ -707,24 +707,26 @@ def render_proyectos() -> None:
             _recuentos(_tableros())
     _graficos_lanzadera()
 
-    tipos = [*sorted({f["carpeta"] for f in filas}), *([NEGOCIOS] if CON_NEGOCIOS else [])]
-    _colorear_pastillas(tipos)
+    carpetas_filas = sorted({f["carpeta"] for f in filas})
+    tipos_filas = sorted({f["tipo"] for f in filas if f["tipo"]}, key=str.lower)
+    _colorear_pastillas([*carpetas_filas, *tipos_filas])
     barra = st.container(horizontal=True, vertical_alignment="center", key="barra_lanzadera")
     with barra:
         texto = _buscar("buscar_proyecto", t("buscar.proyecto"))
         # Un solo grupo de píldoras, para que queden todas a la misma distancia; el filtro
-        # separa carpetas y estados: OR dentro de cada tipo, AND entre tipos y con el buscador.
+        # separa carpetas, tipos y estados: OR dentro de cada grupo, AND entre grupos y con el buscador.
         seleccion = st.pills(
             "Filtros",
-            [*tipos, *ESTADOS],
+            [*carpetas_filas, *tipos_filas, *ESTADOS],
             selection_mode="multi",
-            format_func=lambda o: t(f"filtro.{o}") if o == NEGOCIOS or o in ESTADOS else o,
+            format_func=lambda o: t(f"filtro.{o}") if o in ESTADOS else o,
             label_visibility="collapsed",
             key="filtros_lanzadera",
             width="content",
         )
     estados = [o for o in seleccion if o in ESTADOS]
-    carpetas = [o for o in seleccion if o not in ESTADOS and o != NEGOCIOS]
+    carpetas = [o for o in seleccion if o in carpetas_filas]
+    tipos = [o for o in seleccion if o in tipos_filas]
 
     buscado = texto.strip().lower()
     visibles = [
@@ -732,9 +734,9 @@ def render_proyectos() -> None:
         for f in filas
         if (not buscado or buscado in f["texto"].lower())
         and (not carpetas or f["carpeta"] in carpetas)
+        and (not tipos or f["tipo"] in tipos)
         # Una fila sin estado (proyecto sin app) no es ni activa ni parada.
         and (not estados or (f["activo"] is not None and ("activo" if f["activo"] else "parado") in estados))
-        and (NEGOCIOS not in seleccion or f["negocio"])
     ]
     with barra:
         if _tableros():
@@ -771,7 +773,7 @@ def render_proyectos() -> None:
     # Junto al recuento, lo que lo explica: búsqueda, píldoras de filtro y orden activos.
     activos = [
         f'"{texto.strip()}"' if buscado else "",
-        ", ".join(t(f"filtro.{o}") if o == NEGOCIOS or o in ESTADOS else o for o in seleccion),
+        ", ".join(t(f"filtro.{o}") if o in ESTADOS else o for o in seleccion),
         orden or "",
     ]
     contador.caption(" · ".join([t("contador", n=len(visibles), total=len(filas)), *filter(None, activos)]))

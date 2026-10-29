@@ -3,12 +3,14 @@
 [[proyecto]]
 nombre = "Esta app"
 slug = "esta"
+tipo = "Streamlit"
 puerto = 9501
 ruta = "Apps/esta/esta"
 
 [[proyecto]]
 nombre = "Simple"
 slug = "simple"
+tipo = "Streamlit"
 puerto = 9502
 ruta = "Apps/simple"
 cmd = ["./start.sh"]
@@ -17,6 +19,7 @@ env = { VARIABLE = "valor" }
 [[proyecto]]
 nombre = "Multi"
 slug = "multi"
+tipo = "Wagtail"
 puerto = 9503
 intentos_espera_inicio = 60
 ruta = "Otros/multi"

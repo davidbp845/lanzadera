@@ -39,7 +39,6 @@ TEXTOS = {
         "eje.issues": "Issues",
         # Lanzadera: filtros y tabla
         "buscar.proyecto": "Buscar por nombre, ruta o puerto",
-        "filtro.Negocios": "Negocios",
         "filtro.activo": "activo",
         "filtro.parado": "parado",
         "actualizar_tableros": "Actualizar tableros",
@@ -157,7 +156,6 @@ TEXTOS = {
         "eje.estado": "Status",
         "eje.issues": "Issues",
         "buscar.proyecto": "Search by name, path or port",
-        "filtro.Negocios": "Businesses",
         "filtro.activo": "running",
         "filtro.parado": "stopped",
         "actualizar_tableros": "Refresh boards",

@@ -8,7 +8,13 @@ from config import paths
 
 def _proyecto(entrada: dict, raiz: Path) -> dict:
     # Sin puerto, el proyecto no tiene app: su fila es solo de enlaces de GitHub (ADR-0014).
-    proyecto = {**entrada, "path": raiz / entrada["ruta"], "cmd": entrada.get("cmd"), "puerto": entrada.get("puerto")}
+    proyecto = {
+        **entrada,
+        "path": raiz / entrada["ruta"],
+        "cmd": entrada.get("cmd"),
+        "puerto": entrada.get("puerto"),
+        "tipo": entrada.get("tipo"),
+    }
     if "enlaces" in entrada:
         # (etiqueta, puerto, ruta_url, host): la forma que pintan los enlaces de la UI.
         proyecto["enlaces"] = [
