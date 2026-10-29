@@ -18,7 +18,7 @@ Cargado por `config/proyectos.py:cargar()`. Las rutas son relativas a la carpeta
 | `cmd_detener` | lista | no | Comando de parada. Sin él, `SIGTERM` al grupo de quien escucha `puerto` |
 | `intentos_espera_inicio` | entero | no | Intentos de 0,5 s esperando a que los puertos respondan (por defecto 20 = 10 s) |
 | `env` | tabla | no | Variables añadidas al entorno heredado (no lo sustituyen) |
-| `enlaces` | lista de `{etiqueta, puerto, ruta_url?}` | no | Varios servicios: un enlace por puerto, y `iniciar()` espera a todos |
+| `enlaces` | lista de `{etiqueta, puerto, ruta_url?, host?}` | no | Varios servicios: un enlace por servicio, a `http://<host>:<puerto><ruta_url>` (`host` por defecto `localhost`; [ADR-0013](../A2-ADR/0013-host-opcional-en-los-enlaces.md)). `iniciar()` espera una vez a cada puerto, aunque se repita en varios enlaces |
 
 Cada entrada no trivial lleva encima un comentario con el porqué de sus claves (p. ej. por qué necesita `cmd_detener`). Esos comentarios son parte del dato.
 
@@ -30,7 +30,7 @@ Opcionales: solo tienen sentido con heruka-flow. Sin `[negocios]`, la Lanzadera 
 - `negocios.intentos_espera_inicio`: margen de arranque de cada negocio.
 - `negocios.single`: un `[[proyecto]]` más, que sale como fila de negocio en la Lanzadera solo si heruka-flow no tiene negocios multi-tenant.
 
-En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta) y `enlaces` como tuplas `(etiqueta, puerto[, ruta_url])`.
+En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
 
 ## Enlaces — `datos/enlaces.csv`
 

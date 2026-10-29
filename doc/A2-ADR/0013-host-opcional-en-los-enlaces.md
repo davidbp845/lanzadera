@@ -27,4 +27,4 @@ Una clave nueva del registro es código y lleva ADR ([0004](0004-registro-de-pro
 
 ## Estado
 
-Propuesta (2026-10-29) — issue [#6](https://github.com/davidbp845/lanzadera/issues/6).
+Aceptada (2026-10-29) — issue [#6](https://github.com/davidbp845/lanzadera/issues/6).
