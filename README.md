@@ -21,7 +21,7 @@ A local launcher for the Streamlit apps (and anything else that listens on a por
 
 ## Pages
 
-- **Launchpad**: two collapsible charts (open issues per status, commit activity), then one row per project with its port, status, links, GitHub repo and board counts, and an on/off switch. Search by name, path or port; filter by folder and status; sort by issues in a board column.
+- **Launchpad**: two collapsible charts (open issues per status, commit activity), then one row per project with its port, status, links, GitHub repo and board counts, and an on/off switch. Search by name, path or port; filter by folder, app type and status; sort by issues in a board column.
 - **Links**: your bookmarks as a searchable table with tag filters.
 - **VPS**: memory, disk, load and failed-services meters over the raw output of a fixed, read-only script sent over SSH.
 - **Local**: total RAM, running projects, the heaviest one, RAM per project split by service, and which registry ports are listening.
@@ -55,6 +55,7 @@ nombre = "Notes vault"       # shown name
 slug = "notes"               # stable id
 puerto = 8510                # main port: decides running / stopped
 ruta = "Apps/notes-vault"    # folder, relative to HOME_LAUNCHER_RAIZ
+tipo = "Streamlit"           # optional: app type, one filter pill per value
 cmd = ["./start.sh"]         # start command, run from that folder
 # cmd_detener = ["./stop.sh"]  optional; otherwise SIGTERM to whoever listens on the port
 enlaces = [                  # optional: one link per service, and the switch waits for all of them
@@ -63,7 +64,7 @@ enlaces = [                  # optional: one link per service, and the switch wa
 ]
 ```
 
-A project without `cmd` is the launcher itself. A project without `puerto` has no app: its row only shows its GitHub repo and board, with no state or switch. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: without it there are no business rows and no **Negocios** filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
+A project without `cmd` is the launcher itself. A project without `puerto` has no app: its row only shows its GitHub repo and board, with no state or switch. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: Its rows have type `heruka-flow`; without it there are no business rows and no `heruka-flow` filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
 
 **`enlaces.csv`**: `descripcion,enlace,etiquetas`, with several tags separated by `;`.
 

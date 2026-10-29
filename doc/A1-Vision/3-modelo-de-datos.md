@@ -14,6 +14,7 @@ Cargado por `config/proyectos.py:cargar()`. Las rutas son relativas a la carpeta
 | `slug` | texto | sí | Identificador estable (clave del interruptor en `st.session_state`) |
 | `puerto` | entero | no | Puerto principal: el que decide el semáforo. Sin él, el proyecto no tiene app: su fila es solo de enlaces de GitHub, sin estado ni interruptor, y no entra en Local ([ADR-0014](../A2-ADR/0014-proyectos-sin-app-solo-enlaces.md)) |
 | `ruta` | texto | sí | Carpeta del proyecto, relativa a `Data`; `cwd` de `cmd` y `cmd_detener` |
+| `tipo` | texto | no | Framework principal de la app (`Streamlit`, `Astro`, `Wagtail`…), el del servicio del puerto principal. Cada valor distinto es una píldora de tipo en la Lanzadera; se muestra tal cual, así que `streamlit` y `Streamlit` serían dos ([ADR-0015](../A2-ADR/0015-tipo-de-aplicacion-en-el-registro.md)) |
 | `cmd` | lista | no | Comando de arranque. Sin él, la fila es esta misma app (no se para desde sí misma) |
 | `cmd_detener` | lista | no | Comando de parada. Sin él, `SIGTERM` al grupo de quien escucha `puerto` |
 | `intentos_espera_inicio` | entero | no | Intentos de 0,5 s esperando a que los puertos respondan (por defecto 20 = 10 s) |
@@ -24,13 +25,15 @@ Cada entrada no trivial lleva encima un comentario con el porqué de sus claves 
 
 ### `[negocios]` y `[negocios.single]`
 
-Opcionales: solo tienen sentido con heruka-flow. Sin `[negocios]`, la Lanzadera no tiene filas de negocios ni píldora **Negocios**, y Local, la actividad y el gráfico de issues se quedan con los `[[proyecto]]`.
+Opcionales: solo tienen sentido con heruka-flow. Sin `[negocios]`, la Lanzadera no tiene filas de negocios ni píldora `heruka-flow`, y Local, la actividad y el gráfico de issues se quedan con los `[[proyecto]]`.
 
 - `negocios.ruta`: carpeta de heruka-flow, donde se ejecutan `dev_up.sh`/`dev_down.sh`.
 - `negocios.intentos_espera_inicio`: margen de arranque de cada negocio.
 - `negocios.single`: un `[[proyecto]]` más, que sale como fila de negocio en la Lanzadera solo si heruka-flow no tiene negocios multi-tenant.
 
-En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta), `puerto` y `cmd` (`None` si faltan) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
+Las filas de negocios, multi-tenant o single, son tipo `heruka-flow` sin escribirlo en el registro.
+
+En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta), `puerto`, `cmd` y `tipo` (`None` si faltan) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
 
 ## Enlaces — `datos/enlaces.csv`
 

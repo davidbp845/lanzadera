@@ -34,4 +34,4 @@ La píldora **Negocios** de ADR-0009 ya hace lo que haría un tipo "heruka-flow"
 
 ## Estado
 
-Propuesta — issue [#8](https://github.com/davidbp845/lanzadera/issues/8).
+Aceptada (2026-10-29) — issue [#8](https://github.com/davidbp845/lanzadera/issues/8).
