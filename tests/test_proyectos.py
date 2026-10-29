@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from config import paths
-from config.proyectos import cargar
+from config.proyectos import cargar, url_enlace
 
 FIXTURE = Path(__file__).parent / "fixtures" / "proyectos.toml"
 RAIZ = Path("/data")
@@ -31,11 +31,26 @@ def test_sin_cmd_es_esta_app(registro):
     ("indice", "esperado"),
     [
         (1, None),
-        (2, [("UI", 9504), ("API", 9503, "/health")]),
+        (
+            2,
+            [
+                ("UI", 9504, "", "localhost"),
+                ("API", 9503, "/health", "localhost"),
+                ("Admin", 9504, "/admin/", "admin.localhost"),
+            ],
+        ),
     ],
 )
 def test_enlaces_como_tuplas(registro, indice, esperado):
     assert registro["proyectos"][indice].get("enlaces") == esperado
+
+
+def test_url_de_cada_enlace(registro):
+    assert [url_enlace(e) for e in registro["proyectos"][2]["enlaces"]] == [
+        "http://localhost:9504",
+        "http://localhost:9503/health",
+        "http://admin.localhost:9504/admin/",
+    ]
 
 
 def test_conserva_las_claves_opcionales(registro):

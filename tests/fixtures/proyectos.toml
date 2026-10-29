@@ -25,6 +25,7 @@ cmd_detener = ["./down.sh"]
 enlaces = [
   { etiqueta = "UI", puerto = 9504 },
   { etiqueta = "API", puerto = 9503, ruta_url = "/health" },
+  { etiqueta = "Admin", puerto = 9504, ruta_url = "/admin/", host = "admin.localhost" },
 ]
 
 [negocios]

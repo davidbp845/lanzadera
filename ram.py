@@ -140,8 +140,8 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
         pids = set()
         for raiz in raices_reales(proyecto["cmd"], proyecto["path"], filas, cwd_de):
             pids |= descendientes(raiz, filas)
-        puertos_raiz = [puerto for _etiqueta, puerto, *_resto in proyecto.get("enlaces", [])] or [proyecto["puerto"]]
-        for puerto in puertos_raiz:
+        puertos_raiz = {puerto for _etiqueta, puerto, _ruta, _host in proyecto.get("enlaces", [])}
+        for puerto in puertos_raiz or {proyecto["puerto"]}:
             pid = puertos.get(puerto)
             if pid is not None:
                 pids |= descendientes(pid, filas)
@@ -149,7 +149,13 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
     desglose = []
     if proyecto.get("enlaces"):
         asignados: set[int] = set()
-        for etiqueta, puerto, *_resto in proyecto["enlaces"]:
+        # Un puerto en varios enlaces (la app y su admin en otro host) es un solo servicio:
+        # va con el primer enlace que lo nombra.
+        vistos: set[int] = set()
+        for etiqueta, puerto, _ruta, _host in proyecto["enlaces"]:
+            if puerto in vistos:
+                continue
+            vistos.add(puerto)
             pid = puertos.get(puerto)
             servicio = (descendientes(pid, filas) & pids) - asignados if pid is not None else set()
             asignados |= servicio

@@ -9,11 +9,17 @@ from config import paths
 def _proyecto(entrada: dict, raiz: Path) -> dict:
     proyecto = {**entrada, "path": raiz / entrada["ruta"], "cmd": entrada.get("cmd")}
     if "enlaces" in entrada:
-        # (etiqueta, puerto[, ruta_url]): la forma que pintan los enlaces de la UI.
+        # (etiqueta, puerto, ruta_url, host): la forma que pintan los enlaces de la UI.
         proyecto["enlaces"] = [
-            (e["etiqueta"], e["puerto"], *([e["ruta_url"]] if "ruta_url" in e else [])) for e in entrada["enlaces"]
+            (e["etiqueta"], e["puerto"], e.get("ruta_url", ""), e.get("host", "localhost")) for e in entrada["enlaces"]
         ]
     return proyecto
+
+
+def url_enlace(enlace: tuple[str, int, str, str]) -> str:
+    """URL que abre el navegador. El host solo cambia esto: el estado sale siempre del puerto local."""
+    _etiqueta, puerto, ruta_url, host = enlace
+    return f"http://{host}:{puerto}{ruta_url}"
 
 
 def cargar(fichero: Path | None = None, raiz: Path | None = None) -> dict:

@@ -63,6 +63,10 @@ slug = "books"
 puerto = 8570
 ruta = "Clients/bookkeeping"
 cmd = ["./start.sh"]
+enlaces = [
+  { etiqueta = "app", puerto = 8570 },
+  { etiqueta = "admin", puerto = 8570, ruta_url = "/admin/", host = "admin.localhost" },
+]
 
 [negocios]
 ruta = "Clients/business-core"

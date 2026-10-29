@@ -94,6 +94,7 @@ def test_raices_reales_por_comando_y_carpeta(cmd, esperado):
 
 def test_desglose_por_servicio_con_el_script_aparte(proyectos):
     # El wrapper pnpm queda por encima del proceso del puerto: cuenta con el script.
+    # El admin comparte puerto con la UI: es el mismo servicio y no sale aparte.
     assert _por_nombre(_medir(proyectos))["Multi"]["desglose"] == [
         ("UI", 9504, 300000),
         ("API", 9503, 400000),

@@ -21,6 +21,7 @@ import textos
 import vps
 from config import paths
 from config.proyectos import cargar as cargar_registro
+from config.proyectos import url_enlace
 from config.vps import cargar as cargar_servidores
 
 MENU = ["Lanzadera", "Enlaces", "VPS", "Local"]
@@ -118,7 +119,9 @@ def iniciar(proyecto: dict) -> None:
     # sentence-transformers para los embeddings del RAG). Sin esto, el
     # toggle se pone verde y los enlaces aparecen antes de que frontend/
     # backend respondan de verdad.
-    for _etiqueta, puerto_enlace, *_resto in proyecto.get("enlaces", []):
+    # Un puerto puede repetirse en varios enlaces (la app y su admin en otro host): se espera una vez.
+    puertos_enlaces = dict.fromkeys(puerto for _etiqueta, puerto, _ruta, _host in proyecto.get("enlaces", []))
+    for puerto_enlace in puertos_enlaces:
         if puerto_enlace != proyecto["puerto"]:
             _esperar_puerto(puerto_enlace, activo_esperado=True, intentos=intentos)
 
@@ -366,13 +369,10 @@ def _render_proyecto(proyecto: dict, activo: bool) -> None:
         estado.markdown(t("estado.activo") if activo else t("estado.parado"))
 
     if activo and proyecto["cmd"] is not None:
-        lista = proyecto.get("enlaces", [(t("enlace.abrir"), proyecto["puerto"])])
+        lista = proyecto.get("enlaces", [(t("enlace.abrir"), proyecto["puerto"], "", "localhost")])
         _pintar_enlaces(
             enlaces,
-            [
-                (etiqueta, f"http://localhost:{puerto_enlace}{resto[0] if resto else ''}")
-                for etiqueta, puerto_enlace, *resto in lista
-            ],
+            [(enlace[0], url_enlace(enlace)) for enlace in lista],
         )
 
     _pintar_github(enlaces_github, proyecto["path"])
@@ -1049,7 +1049,7 @@ def _puertos_registro() -> list[tuple[int, str, bool]]:
     puertos = {}
     for p in PROYECTOS:
         puertos[p["puerto"]] = p["nombre"]
-        for etiqueta, puerto, *_resto in p.get("enlaces", []):
+        for etiqueta, puerto, _ruta, _host in p.get("enlaces", []):
             puertos.setdefault(puerto, f"{p['nombre']} · {etiqueta}")
     if CON_NEGOCIOS:
         if negocios := listar_negocios():

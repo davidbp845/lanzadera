@@ -1,4 +1,5 @@
 import re
+import socket
 import subprocess
 import time
 from datetime import datetime
@@ -30,7 +31,7 @@ def lanzadera(monkeypatch):
         return run_real(cmd, *args, **kwargs)
 
     def popen(cmd, *args, **kwargs):
-        if cmd[0] == "./scripts/dev_up.sh":
+        if cmd[0] in {"./scripts/dev_up.sh", "./up.sh"}:
             llamadas.append(cmd)
             return None
         return popen_real(cmd, *args, **kwargs)
@@ -96,6 +97,22 @@ def test_el_interruptor_de_un_negocio_relanza_el_stack(lanzadera, monkeypatch):
         ["./scripts/dev_down.sh"],
         ["./scripts/dev_up.sh", "--skip-checks", "--negocios", "b"],
     ]
+
+
+def test_iniciar_espera_una_vez_cada_puerto_de_los_enlaces(lanzadera, monkeypatch):
+    # Multi tiene la UI y su admin (otro host) en el mismo puerto 9504.
+    at = _abrir()
+    comprobados = []
+
+    def connect_ex(_sock, direccion):
+        comprobados.append(direccion)
+        return 0
+
+    monkeypatch.setattr(socket.socket, "connect_ex", connect_ex)
+    at.toggle(key="switch_multi").set_value(True).run()
+    assert not at.exception
+    assert lanzadera.llamadas == [["./up.sh"]]
+    assert comprobados.count(("127.0.0.1", 9504)) == 1
 
 
 def test_menu_sin_negocios(lanzadera):
