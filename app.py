@@ -759,7 +759,13 @@ def render_proyectos() -> None:
             key=lambda f: recuentos[f["tablero"]][estado],
             reverse=True,
         )
-    contador.caption(t("contador", n=len(visibles), total=len(filas)))
+    # Junto al recuento, lo que lo explica: búsqueda, píldoras de filtro y orden activos.
+    activos = [
+        f'"{texto.strip()}"' if buscado else "",
+        ", ".join(t(f"filtro.{o}") if o == NEGOCIOS or o in ESTADOS else o for o in seleccion),
+        orden or "",
+    ]
+    contador.caption(" · ".join([t("contador", n=len(visibles), total=len(filas)), *filter(None, activos)]))
 
     # Streamlit no tiene tablas con widgets dentro: cada fila es un contenedor con key, y
     # su clase st-key-<key> permite el fondo de cabecera y el efecto cebra (tema claro fijo).
