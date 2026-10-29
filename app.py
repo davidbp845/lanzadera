@@ -189,6 +189,12 @@ def _recuentos(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], d
     return recuentos
 
 
+def _actualizar_tableros() -> None:
+    # También _github: un tablero recién añadido a un CLAUDE.md no saldría hasta que caducara su hora.
+    _github.clear()
+    _recuentos_en_cache.clear()
+
+
 def _tableros() -> tuple[tuple[str, int], ...]:
     return tuple(sorted({t for ruta in RUTAS_REPOS if (t := _github(str(ruta))[1])}))
 
@@ -711,7 +717,7 @@ def render_proyectos() -> None:
                 t("actualizar_tableros"),
                 icon=":material/refresh:",
                 key="actualizar_tableros",
-                on_click=_recuentos_en_cache.clear,
+                on_click=_actualizar_tableros,
             )
     # Contador y orden en su propia línea, que separa la barra de filtros de la tabla.
     with st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute"):
