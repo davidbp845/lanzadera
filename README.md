@@ -63,7 +63,7 @@ enlaces = [                  # optional: one link per service, and the switch wa
 ]
 ```
 
-A project without `cmd` is the launcher itself. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: without it there are no business rows and no **Negocios** filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
+A project without `cmd` is the launcher itself. A project without `puerto` has no app: its row only shows its GitHub repo and board, with no state or switch. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: without it there are no business rows and no **Negocios** filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
 
 **`enlaces.csv`**: `descripcion,enlace,etiquetas`, with several tags separated by `;`.
 
