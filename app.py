@@ -326,10 +326,12 @@ def _colorear_pastillas(tipos: list[str]) -> None:
     for i, color in enumerate(COLORES_ESTADO, start=1):
         boton = f".st-key-orden_lanzadera button:nth-child({i})"
         reglas.append(f"{boton} {{ color: #31333F; border-color: {color}; background: {color}1f; }}")
-        # aria-pressed en las de selección múltiple, aria-checked en las de una sola.
-        reglas.append(
-            f'{boton}[aria-pressed="true"], {boton}[aria-checked="true"] {{ background: {color}80; font-weight: 600; }}'
-        )
+        # aria-pressed en las de selección múltiple, aria-checked en las de una sola. Streamlit
+        # da su propio color al texto de la activa, también en el <p> de dentro: se fuerza el
+        # oscuro, que sobre el color al 50 % pasa de 6:1 en los cinco estados.
+        activo = f'{boton}[aria-pressed="true"], {boton}[aria-checked="true"]'
+        reglas.append(f"{activo} {{ background: {color}80; border-width: 2px; font-weight: 600; }}")
+        reglas.append(f"{activo}, {activo.replace(', ', ' *, ')} * {{ color: #31333F !important; }}")
     st.html("<style>\n" + "\n".join(reglas) + "\n</style>")
 
 
