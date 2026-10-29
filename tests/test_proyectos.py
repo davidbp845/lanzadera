@@ -15,7 +15,7 @@ def registro():
 
 
 def test_mantiene_el_orden_del_fichero(registro):
-    assert [p["slug"] for p in registro["proyectos"]] == ["esta", "simple", "multi"]
+    assert [p["slug"] for p in registro["proyectos"]] == ["esta", "simple", "multi", "docs"]
 
 
 def test_resuelve_las_rutas_contra_la_raiz_data(registro):
@@ -25,6 +25,12 @@ def test_resuelve_las_rutas_contra_la_raiz_data(registro):
 
 def test_sin_cmd_es_esta_app(registro):
     assert registro["proyectos"][0]["cmd"] is None
+
+
+def test_sin_puerto_es_solo_enlaces(registro):
+    docs = registro["proyectos"][3]
+    assert docs["puerto"] is None
+    assert docs["cmd"] is None
 
 
 @pytest.mark.parametrize(

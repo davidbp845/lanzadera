@@ -53,8 +53,9 @@ def _abrir(buscar=""):
 
 
 def _contador(at):
-    # "N de M": los textos de las tarjetas de gráficos también pueden llevar " de ".
-    return next(c.value for c in at.caption if re.fullmatch(r"\d+ de \d+", c.value))
+    # "N de M" al principio, seguido de los filtros activos: los textos de las tarjetas de
+    # gráficos también pueden llevar " de ".
+    return next(m[0] for c in at.caption if (m := re.match(r"\d+ de \d+(?= · |$)", c.value)))
 
 
 def _nombres(at):
@@ -63,7 +64,7 @@ def _nombres(at):
 
 @pytest.mark.parametrize(
     ("buscar", "contador"),
-    [("", "6 de 6"), ("multi", "1 de 6"), ("9502", "1 de 6"), ("negocio b", "1 de 6"), ("zzz", "0 de 6")],
+    [("", "7 de 7"), ("multi", "1 de 7"), ("9502", "1 de 7"), ("negocio b", "1 de 7"), ("zzz", "0 de 7")],
 )
 def test_filtra_por_texto(lanzadera, buscar, contador):
     at = _abrir(buscar)
@@ -74,7 +75,7 @@ def test_filtra_por_texto(lanzadera, buscar, contador):
 def test_negocios_multitenant_como_filas(lanzadera):
     at = _abrir()
     at.button_group(key="filtros_lanzadera").set_value(["Negocios"]).run()
-    assert _contador(at) == "3 de 6"
+    assert _contador(at) == "3 de 7"
     assert [n for n in _nombres(at) if "egocio" in n] == ["**Todos los negocios**", "**Negocio a**", "**Negocio b**"]
 
 
@@ -82,8 +83,19 @@ def test_sin_multitenant_la_fila_single(lanzadera):
     lanzadera.listar = ""
     at = _abrir()
     at.button_group(key="filtros_lanzadera").set_value(["Negocios"]).run()
-    assert _contador(at) == "1 de 4"
+    assert _contador(at) == "1 de 5"
     assert "**Único**" in _nombres(at)
+
+
+@pytest.mark.parametrize(
+    ("filtro", "con_docs"), [([], True), (["Otros"], True), (["activo"], False), (["parado"], False)]
+)
+def test_un_proyecto_sin_puerto_no_tiene_estado(lanzadera, filtro, con_docs):
+    at = _abrir()
+    at.button_group(key="filtros_lanzadera").set_value(filtro).run()
+    assert not at.exception
+    assert ("**Docs**" in _nombres(at)) == con_docs
+    assert "switch_docs" not in [t.key for t in at.toggle]
 
 
 def test_el_interruptor_de_un_negocio_relanza_el_stack(lanzadera, monkeypatch):
@@ -131,7 +143,7 @@ def sin_negocios(lanzadera, monkeypatch, tmp_path):
 def test_sin_negocios_en_el_registro_no_hay_filas_ni_pildora(sin_negocios):
     at = _abrir()
     assert not at.exception
-    assert _contador(at) == "3 de 3"
+    assert _contador(at) == "4 de 4"
     assert "Negocios" not in at.button_group(key="filtros_lanzadera").options
 
 

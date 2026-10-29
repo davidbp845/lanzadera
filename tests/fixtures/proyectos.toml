@@ -28,6 +28,12 @@ enlaces = [
   { etiqueta = "Admin", puerto = 9504, ruta_url = "/admin/", host = "admin.localhost" },
 ]
 
+# Sin puerto: proyecto sin app, solo enlaces de GitHub (ADR-0014).
+[[proyecto]]
+nombre = "Docs"
+slug = "docs"
+ruta = "Otros/docs"
+
 [negocios]
 ruta = "Otros/negocios"
 intentos_espera_inicio = 100

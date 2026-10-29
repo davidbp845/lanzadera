@@ -52,6 +52,8 @@ st.set_page_config(page_title=t("pagina.Lanzadera"), page_icon="🏠", layout="w
 # código (ADR-0001); aquí solo se cargan.
 REGISTRO = cargar_registro()
 PROYECTOS = REGISTRO["proyectos"]
+# Los que tienen puerto: los únicos que cuentan en Local (puertos y RAM).
+PROYECTOS_CON_APP = [p for p in PROYECTOS if p["puerto"] is not None]
 HERUKA_FLOW = REGISTRO["heruka_flow"]
 INTENTOS_ESPERA_NEGOCIOS = REGISTRO["intentos_negocios"]
 HERUKA_LIFE_SINGLE = REGISTRO["heruka_life_single"]
@@ -74,8 +76,9 @@ def _puerto_activo(puerto: int, host: str = "127.0.0.1", timeout: float = 0.3) -
         return s.connect_ex((host, puerto)) == 0
 
 
-def esta_activo(proyecto: dict) -> bool:
-    return _puerto_activo(proyecto["puerto"])
+def esta_activo(proyecto: dict) -> bool | None:
+    """`None` si el proyecto no tiene puerto: sin app, no tiene estado (ADR-0014)."""
+    return None if proyecto["puerto"] is None else _puerto_activo(proyecto["puerto"])
 
 
 def _esperar_puerto(puerto: int, activo_esperado: bool, intentos: int = 20, espera: float = 0.5) -> None:
@@ -374,11 +377,16 @@ def _interruptor(key: str, on_change, **valor) -> None:
     )
 
 
-def _render_proyecto(proyecto: dict, activo: bool) -> None:
+def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
     nombre, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
         COLUMNAS_LANZADERA, vertical_alignment="center"
     )
     nombre.markdown(f"**{proyecto['nombre']}**")
+    if proyecto["puerto"] is None:
+        for columna in (puerto, estado, enlaces, interruptor):
+            columna.markdown(":gray[—]")
+        _pintar_github(enlaces_github, proyecto["path"])
+        return
     puerto.markdown(str(proyecto["puerto"]))
 
     if proyecto["cmd"] is None:
@@ -537,7 +545,7 @@ def _filas_lanzadera() -> list[dict]:
         activo = esta_activo(proyecto)
         filas.append(
             {
-                "texto": f"{proyecto['nombre']} {proyecto['ruta']} {proyecto['puerto']}",
+                "texto": f"{proyecto['nombre']} {proyecto['ruta']} {proyecto['puerto'] or ''}",
                 "carpeta": _carpeta_raiz(proyecto),
                 "activo": activo,
                 "negocio": False,
@@ -724,7 +732,8 @@ def render_proyectos() -> None:
         for f in filas
         if (not buscado or buscado in f["texto"].lower())
         and (not carpetas or f["carpeta"] in carpetas)
-        and (not estados or ("activo" if f["activo"] else "parado") in estados)
+        # Una fila sin estado (proyecto sin app) no es ni activa ni parada.
+        and (not estados or (f["activo"] is not None and ("activo" if f["activo"] else "parado") in estados))
         and (NEGOCIOS not in seleccion or f["negocio"])
     ]
     with barra:
@@ -1071,7 +1080,7 @@ def _ram(kb: int) -> str:
 def _puertos_registro() -> list[tuple[int, str, bool]]:
     """`(puerto, nombre, escucha)` de cada puerto del registro: el principal y los de sus enlaces."""
     puertos = {}
-    for p in PROYECTOS:
+    for p in PROYECTOS_CON_APP:
         puertos[p["puerto"]] = p["nombre"]
         for etiqueta, puerto, _ruta, _host in p.get("enlaces", []):
             puertos.setdefault(puerto, f"{p['nombre']} · {etiqueta}")
@@ -1093,7 +1102,7 @@ def render_local() -> None:
     col_estado, col_boton = st.columns([4, 1], vertical_alignment="center")
     with col_boton, st.container(horizontal=True, horizontal_alignment="right"):
         recalcular = st.button(t("recalcular"), icon=":material/refresh:", key="recalcular_ram")
-    medibles = [*PROYECTOS, *([HERUKA_LIFE_SINGLE] if CON_NEGOCIOS else [])]
+    medibles = [*PROYECTOS_CON_APP, *([HERUKA_LIFE_SINGLE] if CON_NEGOCIOS else [])]
     if recalcular or "ram" not in st.session_state:
         with col_estado, st.spinner(t("local.midiendo")):
             st.session_state["ram"] = demo.ram(medibles) if DEMO else ram.consultar(medibles)

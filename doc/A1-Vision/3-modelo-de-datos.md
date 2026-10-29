@@ -12,7 +12,7 @@ Cargado por `config/proyectos.py:cargar()`. Las rutas son relativas a la carpeta
 |---|---|---|---|
 | `nombre` | texto | sí | Lo que se muestra |
 | `slug` | texto | sí | Identificador estable (clave del interruptor en `st.session_state`) |
-| `puerto` | entero | sí | Puerto principal: el que decide el semáforo |
+| `puerto` | entero | no | Puerto principal: el que decide el semáforo. Sin él, el proyecto no tiene app: su fila es solo de enlaces de GitHub, sin estado ni interruptor, y no entra en Local ([ADR-0014](../A2-ADR/0014-proyectos-sin-app-solo-enlaces.md)) |
 | `ruta` | texto | sí | Carpeta del proyecto, relativa a `Data`; `cwd` de `cmd` y `cmd_detener` |
 | `cmd` | lista | no | Comando de arranque. Sin él, la fila es esta misma app (no se para desde sí misma) |
 | `cmd_detener` | lista | no | Comando de parada. Sin él, `SIGTERM` al grupo de quien escucha `puerto` |
@@ -30,7 +30,7 @@ Opcionales: solo tienen sentido con heruka-flow. Sin `[negocios]`, la Lanzadera 
 - `negocios.intentos_espera_inicio`: margen de arranque de cada negocio.
 - `negocios.single`: un `[[proyecto]]` más, que sale como fila de negocio en la Lanzadera solo si heruka-flow no tiene negocios multi-tenant.
 
-En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
+En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta), `puerto` y `cmd` (`None` si faltan) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
 
 ## Enlaces — `datos/enlaces.csv`
 
