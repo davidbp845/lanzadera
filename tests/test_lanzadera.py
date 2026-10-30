@@ -41,6 +41,8 @@ def lanzadera(monkeypatch):
     monkeypatch.setenv("HOME_LAUNCHER_DATOS", str(FIXTURES))
     monkeypatch.setattr(subprocess, "run", run)
     monkeypatch.setattr(subprocess, "Popen", popen)
+    # Todos los puertos cerrados: los de los fixtures pueden coincidir con algo que escucha en la máquina.
+    monkeypatch.setattr(socket.socket, "connect_ex", lambda _sock, _direccion: 1)
     st.cache_data.clear()
     return lanzadera
 
@@ -186,7 +188,7 @@ def test_sin_negocios_local_mide_solo_los_proyectos(sin_negocios, monkeypatch):
 @pytest.mark.parametrize(
     ("listar", "fila", "puertos"),
     [
-        (LISTAR, "negocios", [4321, 8520, 8001, 4322, 8521, 8002]),
+        (LISTAR, "negocios", [4321, 8520, 4322, 8521, 8001]),
         ("", "unico", []),
     ],
 )
