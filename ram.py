@@ -198,6 +198,37 @@ def medir(proyectos: list[dict], filas: Filas, puertos: dict[int, int | None], c
     }
 
 
+def fila_heruka_flow(
+    negocios: list[dict],
+    ruta: Path,
+    single: dict,
+    nombre: str = "Todos los negocios",
+    negocio: str = "Negocio {id}",
+    resto: str = "Backend común y script de arranque",
+) -> dict:
+    """La fila de heruka-flow: el stack multi-tenant si hay `negocios` (de `--listar`), si no el single.
+
+    Los dos modos se excluyen (ADR-0005), así que nunca hay dos filas con los mismos procesos.
+    El stack no tiene puerto principal: sus raíces son `dev_up.sh` y los servicios de cada
+    negocio, y el backend común, hijo de `dev_up.sh`, queda en la línea `resto`.
+    """
+    if not negocios:
+        return single
+    return {
+        "nombre": nombre,
+        "slug": "negocios",
+        "puerto": None,
+        "path": ruta,
+        "cmd": ["./scripts/dev_up.sh"],
+        "enlaces": [
+            (f"{negocio.format(id=n['id'])} · {servicio}", n[parte], "", "localhost")
+            for n in negocios
+            for parte, servicio in (("front", "Frontend"), ("panel", "Panel"), ("api", "API"))
+        ],
+        "resto": resto,
+    }
+
+
 def consultar(proyectos: list[dict]) -> dict:
     """Lee `ps` y `ss` una vez cada uno y mide: `{"medicion", "hora", "error"}`; `error` es None si fue bien."""
     try:

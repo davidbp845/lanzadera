@@ -101,6 +101,7 @@ demo/               # sample registry, links, VPS and state for the demo
 config/             # paths, demo mode, language, and the registry / VPS loaders
 vps.py              # SSH query to the VPS, sections and meters
 ram.py              # real RAM (RSS) of each running project
+negocios.py         # heruka-flow businesses and their ports (dev_up.sh --listar)
 github.py           # each project's repo and board, and board counts with gh
 scripts/            # estado_vps.sh, the read-only script sent to the VPS; anadir_enlace.py, to add a link
 tests/              # pytest and AppTest, with fictitious fixtures

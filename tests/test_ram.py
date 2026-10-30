@@ -158,19 +158,11 @@ PS_NEGOCIOS = """\
   603   600  90000 python api.py
   610     1  20000 python -m http.server 4321
 """
-NEGOCIOS = {
-    "nombre": "Todos los negocios",
-    "puerto": None,
-    "path": RAIZ / "Otros/negocios",
-    "cmd": ["./scripts/dev_up.sh"],
-    "enlaces": [
-        ("a · Frontend", 4321, "", "localhost"),
-        ("a · Panel", 8520, "", "localhost"),
-        ("a · API", 8001, "", "localhost"),
-        ("b · Frontend", 4322, "", "localhost"),
-    ],
-    "resto": "Backend común",
-}
+NEGOCIOS = ram.fila_heruka_flow(
+    [{"id": "a", "front": 4321, "panel": 8520, "api": 8001}, {"id": "b", "front": 4322, "panel": 8521, "api": 8002}],
+    RAIZ / "Otros/negocios",
+    {"nombre": "Único"},
+)
 
 
 def _medir_negocios(puertos):
@@ -181,11 +173,13 @@ def test_negocios_sin_puerto_principal_con_el_backend_en_una_linea():
     (medido,) = _medir_negocios({4321: 610, 8520: 602, 8001: 603, 8000: 601})["proyectos"]
     assert medido["kb"] == 3000 + 500000 + 60000 + 90000 + 20000
     assert medido["desglose"] == [
-        ("a · Frontend", 4321, 20000),
-        ("a · Panel", 8520, 60000),
-        ("a · API", 8001, 90000),
-        ("b · Frontend", 4322, 0),
-        ("Backend común", None, 3000 + 500000),
+        ("Negocio a · Frontend", 4321, 20000),
+        ("Negocio a · Panel", 8520, 60000),
+        ("Negocio a · API", 8001, 90000),
+        ("Negocio b · Frontend", 4322, 0),
+        ("Negocio b · Panel", 8521, 0),
+        ("Negocio b · API", 8002, 0),
+        ("Backend común y script de arranque", None, 3000 + 500000),
     ]
 
 
@@ -193,3 +187,7 @@ def test_negocios_sin_puerto_principal_con_el_backend_en_una_linea():
 def test_negocios_activos_por_cualquier_servicio(puertos, kb):
     medidos = _medir_negocios(puertos)["proyectos"]
     assert [m["kb"] for m in medidos] == ([] if kb == "inactivo" else [kb])
+
+
+def test_sin_negocios_la_fila_es_el_single():
+    assert ram.fila_heruka_flow([], RAIZ / "Otros/negocios", {"nombre": "Único"}) == {"nombre": "Único"}

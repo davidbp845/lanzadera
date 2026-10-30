@@ -16,6 +16,7 @@ import actividad
 import demo
 import github
 import graficos
+import negocios as negocios_hf
 import ram
 import textos
 import vps
@@ -424,24 +425,7 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
 def listar_negocios() -> list[dict]:
     if DEMO:
         return demo.listar_negocios()
-    try:
-        salida = subprocess.run(
-            ["./scripts/dev_up.sh", "--listar"],
-            cwd=HERUKA_FLOW,
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        ).stdout
-    except (OSError, subprocess.TimeoutExpired):
-        return []
-    negocios = []
-    for linea in salida.splitlines():
-        partes = linea.split("\t")
-        if len(partes) == 4:
-            negocio_id, front, panel, api = partes
-            negocios.append({"id": negocio_id, "front": int(front), "panel": int(panel), "api": int(api)})
-    return negocios
+    return negocios_hf.listar(HERUKA_FLOW)
 
 
 def _puertos_negocio(negocio: dict) -> list[int]:
@@ -1096,31 +1080,6 @@ def _puertos_registro() -> list[tuple[int, str, bool]]:
     return [(puerto, nombre, _puerto_activo(puerto)) for puerto, nombre in puertos.items()]
 
 
-def _negocios_medibles() -> dict:
-    """La fila de heruka-flow en Local: el stack multi-tenant si `--listar` da negocios, si no el single.
-
-    Los dos modos se excluyen (ADR-0005), así que nunca hay dos filas con los mismos procesos.
-    El stack no tiene puerto principal: sus raíces son `dev_up.sh` y los servicios de cada
-    negocio, y el backend común, hijo de `dev_up.sh`, queda en la línea del script.
-    """
-    negocios = listar_negocios()
-    if not negocios:
-        return HERUKA_LIFE_SINGLE
-    return {
-        "nombre": t("todos_negocios"),
-        "slug": "negocios",
-        "puerto": None,
-        "path": HERUKA_FLOW,
-        "cmd": ["./scripts/dev_up.sh"],
-        "enlaces": [
-            (f"{t('negocio', id=n['id'])} · {servicio}", n[parte], "", "localhost")
-            for n in negocios
-            for parte, servicio in (("front", "Frontend"), ("panel", "Panel"), ("api", "API"))
-        ],
-        "resto": t("backend_comun"),
-    }
-
-
 def render_local() -> None:
     st.title(t("pagina.Local"))
     _aviso_demo()
@@ -1129,7 +1088,17 @@ def render_local() -> None:
     col_estado, col_boton = st.columns([4, 1], vertical_alignment="center")
     with col_boton, st.container(horizontal=True, horizontal_alignment="right"):
         recalcular = st.button(t("recalcular"), icon=":material/refresh:", key="recalcular_ram")
-    medibles = [*PROYECTOS_CON_APP, *([_negocios_medibles()] if CON_NEGOCIOS else [])]
+    medibles = PROYECTOS_CON_APP
+    if CON_NEGOCIOS:
+        fila = ram.fila_heruka_flow(
+            listar_negocios(),
+            HERUKA_FLOW,
+            HERUKA_LIFE_SINGLE,
+            nombre=t("todos_negocios"),
+            negocio=t("negocio", id="{id}"),
+            resto=t("backend_comun"),
+        )
+        medibles = [*medibles, fila]
     if recalcular or "ram" not in st.session_state:
         with col_estado, st.spinner(t("local.midiendo")):
             st.session_state["ram"] = demo.ram(medibles) if DEMO else ram.consultar(medibles)
