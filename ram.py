@@ -169,7 +169,7 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
             desglose.append((etiqueta, puerto, _kb(servicio, filas)))
         resto = pids - asignados
         if resto:
-            desglose.append((proyecto.get("resto", SCRIPT_ARRANQUE), None, _kb(resto, filas)))
+            desglose.append((SCRIPT_ARRANQUE, None, _kb(resto, filas)))
     return {
         "nombre": proyecto["nombre"],
         "puerto": proyecto["puerto"],
@@ -184,8 +184,7 @@ def medir(proyectos: list[dict], filas: Filas, puertos: dict[int, int | None], c
 
     `puertos` es la salida de `parsear_ss`. Solo cuenta los proyectos con algo escuchando
     en su puerto principal (o, si no tienen, en el de algún enlace); los de otro usuario
-    van al final con `kb` None. `resto`, si lo hay, nombra la línea del desglose que no
-    es de ningún enlace en vez de `SCRIPT_ARRANQUE`. `compartidos`
+    van al final con `kb` None. `compartidos`
     lista los pares con PIDs en común: si no está vacío, se ha contado RAM dos veces.
     """
     medidos = [m for p in proyectos if (m := _medir_proyecto(p, filas, puertos, cwd_de))]
@@ -204,13 +203,14 @@ def fila_heruka_flow(
     single: dict,
     nombre: str = "Todos los negocios",
     negocio: str = "Negocio {id}",
-    resto: str = "Backend común y script de arranque",
+    backend: str = "Backend común",
 ) -> dict:
     """La fila de heruka-flow: el stack multi-tenant si hay `negocios` (de `--listar`), si no el single.
 
     Los dos modos se excluyen (ADR-0005), así que nunca hay dos filas con los mismos procesos.
-    El stack no tiene puerto principal: sus raíces son `dev_up.sh` y los servicios de cada
-    negocio, y el backend común, hijo de `dev_up.sh`, queda en la línea `resto`.
+    El stack no tiene puerto principal: sus raíces son `dev_up.sh` y los servicios de cada negocio.
+    Las APIs de todos los negocios las sirve un mismo proceso, el backend común: va en una
+    sola línea, con el puerto de la primera API, en vez de repartido entre negocios.
     """
     if not negocios:
         return single
@@ -221,11 +221,13 @@ def fila_heruka_flow(
         "path": ruta,
         "cmd": ["./scripts/dev_up.sh"],
         "enlaces": [
-            (f"{negocio.format(id=n['id'])} · {servicio}", n[parte], "", "localhost")
-            for n in negocios
-            for parte, servicio in (("front", "Frontend"), ("panel", "Panel"), ("api", "API"))
+            *(
+                (f"{negocio.format(id=n['id'])} · {servicio}", n[parte], "", "localhost")
+                for n in negocios
+                for parte, servicio in (("front", "Frontend"), ("panel", "Panel"))
+            ),
+            (backend, negocios[0]["api"], "", "localhost"),
         ],
-        "resto": resto,
     }
 
 

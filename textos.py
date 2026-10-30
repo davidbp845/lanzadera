@@ -125,7 +125,7 @@ TEXTOS = {
         "col.ram": "RAM",
         "col.servicio": "Servicio",
         "script_arranque": "Script de arranque",
-        "backend_comun": "Backend común y script de arranque",
+        "backend_comun": "Backend común",
     },
     "en": {
         "menu": "Menu",
@@ -239,7 +239,7 @@ TEXTOS = {
         "col.ram": "RAM",
         "col.servicio": "Service",
         "script_arranque": "Start script",
-        "backend_comun": "Shared backend and start script",
+        "backend_comun": "Shared backend",
     },
 }
 

@@ -1096,7 +1096,7 @@ def render_local() -> None:
             HERUKA_LIFE_SINGLE,
             nombre=t("todos_negocios"),
             negocio=t("negocio", id="{id}"),
-            resto=t("backend_comun"),
+            backend=t("backend_comun"),
         )
         medibles = [*medibles, fila]
     if recalcular or "ram" not in st.session_state:

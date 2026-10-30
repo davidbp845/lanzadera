@@ -149,13 +149,12 @@ def test_pagina_local_mide_al_entrar_y_al_recalcular(monkeypatch, proyectos):
     assert llamadas == [4, 4]
 
 
-# Stack de negocios: dev_up.sh con el backend común de hijo; el frontend estático se ha
-# reparentado fuera del script. El negocio b está parado.
+# Stack de negocios: dev_up.sh con el backend común de hijo, que escucha las APIs de todos
+# los negocios; el frontend estático se ha reparentado fuera del script. El negocio b está parado.
 PS_NEGOCIOS = """\
   600     1   3000 bash ./scripts/dev_up.sh --skip-checks --negocios a
   601   600 500000 python main.py
   602   600  60000 streamlit run panel.py
-  603   600  90000 python api.py
   610     1  20000 python -m http.server 4321
 """
 NEGOCIOS = ram.fila_heruka_flow(
@@ -170,16 +169,15 @@ def _medir_negocios(puertos):
 
 
 def test_negocios_sin_puerto_principal_con_el_backend_en_una_linea():
-    (medido,) = _medir_negocios({4321: 610, 8520: 602, 8001: 603, 8000: 601})["proyectos"]
-    assert medido["kb"] == 3000 + 500000 + 60000 + 90000 + 20000
+    (medido,) = _medir_negocios({4321: 610, 8520: 602, 8000: 601, 8001: 601, 8002: 601})["proyectos"]
+    assert medido["kb"] == 3000 + 500000 + 60000 + 20000
     assert medido["desglose"] == [
         ("Negocio a · Frontend", 4321, 20000),
         ("Negocio a · Panel", 8520, 60000),
-        ("Negocio a · API", 8001, 90000),
         ("Negocio b · Frontend", 4322, 0),
         ("Negocio b · Panel", 8521, 0),
-        ("Negocio b · API", 8002, 0),
-        ("Backend común y script de arranque", None, 3000 + 500000),
+        ("Backend común", 8001, 500000),
+        (ram.SCRIPT_ARRANQUE, None, 3000),
     ]
 
 
