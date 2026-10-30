@@ -1096,6 +1096,31 @@ def _puertos_registro() -> list[tuple[int, str, bool]]:
     return [(puerto, nombre, _puerto_activo(puerto)) for puerto, nombre in puertos.items()]
 
 
+def _negocios_medibles() -> dict:
+    """La fila de heruka-flow en Local: el stack multi-tenant si `--listar` da negocios, si no el single.
+
+    Los dos modos se excluyen (ADR-0005), así que nunca hay dos filas con los mismos procesos.
+    El stack no tiene puerto principal: sus raíces son `dev_up.sh` y los servicios de cada
+    negocio, y el backend común, hijo de `dev_up.sh`, queda en la línea del script.
+    """
+    negocios = listar_negocios()
+    if not negocios:
+        return HERUKA_LIFE_SINGLE
+    return {
+        "nombre": t("todos_negocios"),
+        "slug": "negocios",
+        "puerto": None,
+        "path": HERUKA_FLOW,
+        "cmd": ["./scripts/dev_up.sh"],
+        "enlaces": [
+            (f"{t('negocio', id=n['id'])} · {servicio}", n[parte], "", "localhost")
+            for n in negocios
+            for parte, servicio in (("front", "Frontend"), ("panel", "Panel"), ("api", "API"))
+        ],
+        "resto": t("backend_comun"),
+    }
+
+
 def render_local() -> None:
     st.title(t("pagina.Local"))
     _aviso_demo()
@@ -1104,7 +1129,7 @@ def render_local() -> None:
     col_estado, col_boton = st.columns([4, 1], vertical_alignment="center")
     with col_boton, st.container(horizontal=True, horizontal_alignment="right"):
         recalcular = st.button(t("recalcular"), icon=":material/refresh:", key="recalcular_ram")
-    medibles = [*PROYECTOS_CON_APP, *([HERUKA_LIFE_SINGLE] if CON_NEGOCIOS else [])]
+    medibles = [*PROYECTOS_CON_APP, *([_negocios_medibles()] if CON_NEGOCIOS else [])]
     if recalcular or "ram" not in st.session_state:
         with col_estado, st.spinner(t("local.midiendo")):
             st.session_state["ram"] = demo.ram(medibles) if DEMO else ram.consultar(medibles)
@@ -1169,7 +1194,7 @@ def render_local() -> None:
         filas = [
             {
                 t("col.proyecto"): m["nombre"],
-                t("col.puerto"): str(m["puerto"]),
+                t("col.puerto"): "" if m["puerto"] is None else str(m["puerto"]),
                 t("col.ram"): t("local.no_visible") if m["kb"] is None else _ram(m["kb"]),
             }
             for m in medicion["proyectos"]

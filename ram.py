@@ -125,10 +125,17 @@ def _kb(pids: set[int], filas: Filas) -> int:
 
 
 def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None], cwd_de) -> dict | None:
-    if proyecto["puerto"] not in puertos:
+    # Sin puerto principal (el stack de negocios), cuenta como activo si escucha cualquiera de sus servicios.
+    puertos_estado = (
+        [proyecto["puerto"]]
+        if proyecto["puerto"] is not None
+        else [puerto for _etiqueta, puerto, _ruta, _host in proyecto.get("enlaces", [])]
+    )
+    escuchando = [puerto for puerto in puertos_estado if puerto in puertos]
+    if not escuchando:
         return None
-    pid_principal = puertos[proyecto["puerto"]]
-    if pid_principal is None:
+    pid_principal = puertos[escuchando[0]]
+    if all(puertos[puerto] is None for puerto in escuchando):
         # Activo, pero el proceso es de otro usuario (Docker como root): su RAM no se ve.
         return {"nombre": proyecto["nombre"], "puerto": proyecto["puerto"], "pids": set(), "kb": None, "desglose": []}
     if proyecto["cmd"] is None:
@@ -162,7 +169,7 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
             desglose.append((etiqueta, puerto, _kb(servicio, filas)))
         resto = pids - asignados
         if resto:
-            desglose.append((SCRIPT_ARRANQUE, None, _kb(resto, filas)))
+            desglose.append((proyecto.get("resto", SCRIPT_ARRANQUE), None, _kb(resto, filas)))
     return {
         "nombre": proyecto["nombre"],
         "puerto": proyecto["puerto"],
@@ -176,7 +183,9 @@ def medir(proyectos: list[dict], filas: Filas, puertos: dict[int, int | None], c
     """`{"proyectos": [...], "compartidos": [(nombre, nombre)]}`, de mayor a menor consumo.
 
     `puertos` es la salida de `parsear_ss`. Solo cuenta los proyectos con algo escuchando
-    en su puerto principal; los de otro usuario van al final con `kb` None. `compartidos`
+    en su puerto principal (o, si no tienen, en el de algún enlace); los de otro usuario
+    van al final con `kb` None. `resto`, si lo hay, nombra la línea del desglose que no
+    es de ningún enlace en vez de `SCRIPT_ARRANQUE`. `compartidos`
     lista los pares con PIDs en común: si no está vacío, se ha contado RAM dos veces.
     """
     medidos = [m for p in proyectos if (m := _medir_proyecto(p, filas, puertos, cwd_de))]

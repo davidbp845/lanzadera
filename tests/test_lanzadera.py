@@ -181,3 +181,27 @@ def test_sin_negocios_local_mide_solo_los_proyectos(sin_negocios, monkeypatch):
     at.sidebar.radio(key="pagina").set_value("Local").run()
     assert not at.exception
     assert medidos == ["esta", "simple", "multi"]
+
+
+@pytest.mark.parametrize(
+    ("listar", "fila", "puertos"),
+    [
+        (LISTAR, "negocios", [4321, 8520, 8001, 4322, 8521, 8002]),
+        ("", "unico", []),
+    ],
+)
+def test_local_mide_los_negocios_o_el_single(lanzadera, monkeypatch, listar, fila, puertos):
+    # Single y multi-tenant se excluyen: una sola fila de heruka-flow, nunca las dos.
+    lanzadera.listar = listar
+    medidos = []
+
+    def consultar(proyectos):
+        medidos.extend(proyectos)
+        return {"medicion": {"proyectos": [], "compartidos": []}, "hora": datetime.now(), "error": None}
+
+    monkeypatch.setattr(ram, "consultar", consultar)
+    at = _abrir()
+    at.sidebar.radio(key="pagina").set_value("Local").run()
+    assert not at.exception
+    assert [p["slug"] for p in medidos] == ["esta", "simple", "multi", fila]
+    assert [puerto for _etiqueta, puerto, _ruta, _host in medidos[-1].get("enlaces", [])] == puertos

@@ -57,7 +57,11 @@ def ram(proyectos: list[dict]) -> dict:
     medidos = []
     for proyecto in proyectos:
         servicios = _estado()["ram"].get(proyecto["slug"])
-        if not servicios or not puerto_activo(proyecto["puerto"]):
+        # Sin puerto principal (los negocios), basta con que escuche alguno de sus servicios.
+        puertos = (
+            [proyecto["puerto"]] if proyecto["puerto"] is not None else [e[1] for e in proyecto.get("enlaces", [])]
+        )
+        if not servicios or not any(puerto_activo(p) for p in puertos):
             continue
         desglose = [(s["etiqueta"], s.get("puerto"), s["mb"] * 1024) for s in servicios]
         medidos.append(

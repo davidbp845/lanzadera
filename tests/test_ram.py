@@ -147,3 +147,49 @@ def test_pagina_local_mide_al_entrar_y_al_recalcular(monkeypatch, proyectos):
     assert llamadas == [4]
     at.button[0].click().run()
     assert llamadas == [4, 4]
+
+
+# Stack de negocios: dev_up.sh con el backend común de hijo; el frontend estático se ha
+# reparentado fuera del script. El negocio b está parado.
+PS_NEGOCIOS = """\
+  600     1   3000 bash ./scripts/dev_up.sh --skip-checks --negocios a
+  601   600 500000 python main.py
+  602   600  60000 streamlit run panel.py
+  603   600  90000 python api.py
+  610     1  20000 python -m http.server 4321
+"""
+NEGOCIOS = {
+    "nombre": "Todos los negocios",
+    "puerto": None,
+    "path": RAIZ / "Otros/negocios",
+    "cmd": ["./scripts/dev_up.sh"],
+    "enlaces": [
+        ("a · Frontend", 4321, "", "localhost"),
+        ("a · Panel", 8520, "", "localhost"),
+        ("a · API", 8001, "", "localhost"),
+        ("b · Frontend", 4322, "", "localhost"),
+    ],
+    "resto": "Backend común",
+}
+
+
+def _medir_negocios(puertos):
+    return ram.medir([NEGOCIOS], ram.parsear_ps(PS_NEGOCIOS), puertos, {600: "/data/Otros/negocios"}.get)
+
+
+def test_negocios_sin_puerto_principal_con_el_backend_en_una_linea():
+    (medido,) = _medir_negocios({4321: 610, 8520: 602, 8001: 603, 8000: 601})["proyectos"]
+    assert medido["kb"] == 3000 + 500000 + 60000 + 90000 + 20000
+    assert medido["desglose"] == [
+        ("a · Frontend", 4321, 20000),
+        ("a · Panel", 8520, 60000),
+        ("a · API", 8001, 90000),
+        ("b · Frontend", 4322, 0),
+        ("Backend común", None, 3000 + 500000),
+    ]
+
+
+@pytest.mark.parametrize(("puertos", "kb"), [({}, "inactivo"), ({4322: None}, None)])
+def test_negocios_activos_por_cualquier_servicio(puertos, kb):
+    medidos = _medir_negocios(puertos)["proyectos"]
+    assert [m["kb"] for m in medidos] == ([] if kb == "inactivo" else [kb])

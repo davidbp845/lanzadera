@@ -53,3 +53,9 @@ mail = [
   { etiqueta = "MCP server", puerto = 8541, mb = 74 },
 ]
 books = [{ etiqueta = "app", puerto = 8570, mb = 158 }]
+negocios = [
+  { etiqueta = "acme · frontend", puerto = 3100, mb = 41 },
+  { etiqueta = "acme · panel", puerto = 3101, mb = 187 },
+  { etiqueta = "acme · API", puerto = 8000, mb = 95 },
+  { etiqueta = "shared backend", mb = 612 },
+]
