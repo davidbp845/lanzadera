@@ -2,7 +2,7 @@
 
 ## Proyectos hermanos
 
-Para arrancar y parar, home solo conoce de cada proyecto lo que dice su fila del registro. Para los enlaces a GitHub de la Lanzadera lee además, sin escribir nada, el remoto git de su carpeta (o del primer submódulo) y la línea `Tablero` de su `CLAUDE.md`; si faltan, el proyecto sale sin enlace. El recuento de cada tablero se pide a la API de GitHub con `gh` (solo lectura), así que necesita `gh` con sesión para el usuario que ejecuta `home-streamlit`. Para el mapa de actividad lee `git log` de su carpeta y de sus submódulos, también sin escribir. El contrato con cada uno es:
+Para arrancar y parar, home solo conoce de cada proyecto lo que dice su fila del registro. Para los enlaces a GitHub de la Lanzadera lee además, sin escribir nada, el remoto git de su carpeta (o del primer submódulo) y la línea `Tablero` de su `CLAUDE.md`; si faltan, el proyecto sale sin enlace. El recuento de cada tablero se pide a la API de GitHub con `gh` (solo lectura), así que necesita `gh` con sesión para el usuario que ejecuta `home-streamlit`. La misma consulta lee el campo `Latido` del tablero, que escribe el plugin `dev` del método común mientras una sesión de Claude Code trabaja en un issue ([ADR-0016](../A2-ADR/0016-latido-del-issue-en-curso.md)); el launcher no lo escribe nunca. Para el mapa de actividad lee `git log` de su carpeta y de sus submódulos, también sin escribir. El contrato con cada uno es:
 
 - un **puerto** fijo en su propia configuración (no se pasa desde home, salvo los Astro, que lo reciben con `--port`);
 - un **comando de arranque** no interactivo, ejecutable desde su carpeta (p. ej. `dev_up.sh --skip-checks`, para que no se quede esperando un `read -p` con la salida en `/dev/null`);

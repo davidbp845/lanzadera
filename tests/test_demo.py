@@ -213,3 +213,10 @@ def test_un_fallo_de_gh_no_se_queda_en_cache(modo_demo, monkeypatch):
     red["hay"] = True
     at.run()
     assert not any(vacio in c.value for c in at.caption)
+
+
+def test_parpadea_solo_la_pastilla_in_progress_del_tablero_con_una_sesion_trabajando(modo_demo):
+    at = _abrir()
+    latidos = [m.value for m in at.markdown if 'class="latido"' in m.value]
+    assert len(latidos) == 1
+    assert 'title="In progress · Claude Code working now on: #3 ' in latidos[0]

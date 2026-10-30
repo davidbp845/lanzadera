@@ -6,6 +6,7 @@ Los enlaces salen sin red; el recuento consulta la API de GitHub con el `gh` del
 import json
 import re
 import subprocess
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # La línea que fija el tablero en la sección `## Método` del método común.
@@ -61,6 +62,11 @@ def tablero(path: Path, raiz: Path) -> str | None:
 
 ESTADOS = ["Backlog", "Ready", "In progress", "In review", "Done"]
 
+# El hook del plugin `dev` escribe la hora en el campo `Latido` como mucho cada 5 minutos
+# mientras una sesión trabaja en el issue, y lo vacía al acabar el turno; si la sesión muere
+# sin avisar, el latido deja de contar pasado este margen (ADR-0016).
+CADUCIDAD_LATIDO = timedelta(minutes=15)
+
 CONSULTA = """
 query($owner: String!, $numero: Int!, $cursor: String) {
   user(login: $owner) {
@@ -70,6 +76,8 @@ query($owner: String!, $numero: Int!, $cursor: String) {
         nodes {
           isArchived
           fieldValueByName(name: "Status") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+          latido: fieldValueByName(name: "Latido") { ... on ProjectV2ItemFieldTextValue { text } }
+          content { ... on Issue { number title } }
         }
       }
     }
@@ -88,8 +96,27 @@ def contar(nodos: list[dict]) -> dict[str, int]:
     return cuenta
 
 
-def recuento(owner: str, numero: int) -> dict[str, int] | None:
-    """Recuento por estado de un tablero de GitHub Projects; None si `gh` falla (sin red, sin sesión...)."""
+def en_curso(nodos: list[dict], ahora: datetime) -> list[str]:
+    """`#N título` de los items In progress con un latido de hace menos de `CADUCIDAD_LATIDO`."""
+    issues = []
+    for nodo in nodos:
+        estado = (nodo.get("fieldValueByName") or {}).get("name")
+        texto = (nodo.get("latido") or {}).get("text")
+        if nodo.get("isArchived") or estado != "In progress" or not texto:
+            continue
+        try:
+            hora = datetime.fromisoformat(texto)
+        except ValueError:
+            continue
+        if hora.tzinfo and ahora - hora < CADUCIDAD_LATIDO:
+            contenido = nodo.get("content") or {}
+            issues.append(f"#{contenido.get('number')} {contenido.get('title', '')}".strip())
+    return issues
+
+
+def recuento(owner: str, numero: int) -> dict | None:
+    """Items por estado de un tablero de GitHub Projects, más `en_curso` (los issues con una
+    sesión de Claude Code trabajando ahora); None si `gh` falla (sin red, sin sesión...)."""
     nodos: list[dict] = []
     cursor = None
     while True:
@@ -103,5 +130,5 @@ def recuento(owner: str, numero: int) -> dict[str, int] | None:
             return None
         nodos += items["nodes"]
         if not items["pageInfo"]["hasNextPage"]:
-            return contar(nodos)
+            return {**contar(nodos), "en_curso": en_curso(nodos, datetime.now(UTC))}
         cursor = items["pageInfo"]["endCursor"]

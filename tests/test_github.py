@@ -1,5 +1,6 @@
 import json
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -81,7 +82,38 @@ def test_recuento_pagina_y_cuenta_por_estado(monkeypatch):
         return subprocess.CompletedProcess(args, 0, paginas[cursor], "")
 
     monkeypatch.setattr(github.subprocess, "run", run)
-    assert github.recuento("davidbp845", 9) == {"Backlog": 1, "Ready": 0, "In progress": 0, "In review": 1, "Done": 1}
+    cuenta = github.recuento("davidbp845", 9)
+    assert cuenta == {"Backlog": 1, "Ready": 0, "In progress": 0, "In review": 1, "Done": 1, "en_curso": []}
+
+
+AHORA = datetime(2026, 10, 30, 12, 0, tzinfo=UTC)
+
+
+def _nodo(latido, estado="In progress", archivado=False):
+    return {
+        "isArchived": archivado,
+        "fieldValueByName": {"name": estado},
+        "latido": {"text": latido} if latido is not None else None,
+        "content": {"number": 3, "title": "Parpadeo"},
+    }
+
+
+@pytest.mark.parametrize(
+    ("nodo", "en_curso"),
+    [
+        (_nodo("2026-10-30T11:50:00Z"), ["#3 Parpadeo"]),
+        # Caducado: la sesión murió sin vaciar el campo.
+        (_nodo("2026-10-30T11:40:00Z"), []),
+        # Vaciado por el hook al acabar el turno, o tablero sin el campo `Latido`.
+        (_nodo(None), []),
+        (_nodo("ayer"), []),
+        (_nodo("2026-10-30T11:50:00"), []),
+        (_nodo("2026-10-30T11:50:00Z", estado="In review"), []),
+        (_nodo("2026-10-30T11:50:00Z", archivado=True), []),
+    ],
+)
+def test_en_curso_solo_cuenta_latidos_recientes_de_in_progress(nodo, en_curso):
+    assert github.en_curso([nodo], AHORA) == en_curso
 
 
 @pytest.mark.parametrize(

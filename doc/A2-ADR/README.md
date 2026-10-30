@@ -23,3 +23,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0013](0013-host-opcional-en-los-enlaces.md) | Host opcional en los enlaces de un proyecto (`admin.localhost`) | Aceptada |
 | [0014](0014-proyectos-sin-app-solo-enlaces.md) | Proyectos sin app: `puerto` opcional y fila de solo enlaces | Aceptada |
 | [0015](0015-tipo-de-aplicacion-en-el-registro.md) | Clave `tipo` en el registro y píldoras por tipo de aplicación (`heruka-flow` sustituye a Negocios) | Aceptada |
+| [0016](0016-latido-del-issue-en-curso.md) | Latido del issue en curso en el campo `Latido` del tablero: la pastilla In progress parpadea | Aceptada |

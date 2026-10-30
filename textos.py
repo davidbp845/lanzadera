@@ -56,6 +56,7 @@ TEXTOS = {
         "esta_app": "esta app",
         "repositorio": "repositorio",
         "tablero": "tablero",
+        "en_curso": "Claude Code trabajando ahora en",
         "todos_negocios": "Todos los negocios",
         "negocio": "Negocio {id}",
         # Enlaces
@@ -174,6 +175,7 @@ TEXTOS = {
         "esta_app": "this app",
         "repositorio": "repo",
         "tablero": "board",
+        "en_curso": "Claude Code working now on",
         "todos_negocios": "All businesses",
         "negocio": "Business {id}",
         "enlaces.vacio": (

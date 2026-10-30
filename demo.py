@@ -45,11 +45,13 @@ def repositorio_y_tablero(slug: str) -> tuple[str | None, tuple[str, int] | None
     return _estado()["github"][slug]["repo"], (OWNER, slugs.index(slug) + 1)
 
 
-def recuento(owner: str, numero: int) -> dict[str, int] | None:
+def recuento(owner: str, numero: int) -> dict | None:
+    """La misma forma que `github.recuento`."""
     entradas = list(_estado()["github"].values())
     if owner != OWNER or not 1 <= numero <= len(entradas):
         return None
-    return dict(zip(github.ESTADOS, entradas[numero - 1]["cuenta"], strict=True))
+    entrada = entradas[numero - 1]
+    return {**dict(zip(github.ESTADOS, entrada["cuenta"], strict=True)), "en_curso": entrada.get("en_curso", [])}
 
 
 def ram(proyectos: list[dict]) -> dict:

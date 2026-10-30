@@ -14,10 +14,12 @@ negocios = [
 ]
 
 # Repositorio y tablero de cada proyecto (por slug; `negocios`, el de los negocios),
-# con sus items por estado: Backlog, Ready, In progress, In review, Done.
+# con sus items por estado: Backlog, Ready, In progress, In review, Done; `en_curso`, los
+# issues In progress con una sesión de Claude Code trabajando ahora (su pastilla parpadea).
 [github.launchpad]
 repo = "https://github.com/davidbp845/lanzadera"
 cuenta = [3, 2, 1, 2, 41]
+en_curso = ["#3 Blink In progress while a Claude Code session works on an issue"]
 [github.notes]
 repo = "https://github.com/example/notes-vault"
 cuenta = [6, 1, 0, 1, 23]

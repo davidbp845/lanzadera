@@ -181,14 +181,14 @@ def _github(path: str) -> tuple[str | None, tuple[str, int] | None]:
 
 
 @st.cache_data(ttl=600, show_spinner=False)
-def _recuentos_en_cache(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], dict[str, int] | None]:
+def _recuentos_en_cache(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], dict | None]:
     # Una consulta por tablero, todas a la vez (~0,6 s cada una); el buscador no las repite.
     consultar = demo.recuento if DEMO else github.recuento
     with ThreadPoolExecutor() as hilos:
         return dict(zip(tableros, hilos.map(lambda tablero: consultar(*tablero), tableros), strict=True))
 
 
-def _recuentos(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], dict[str, int] | None]:
+def _recuentos(tableros: tuple[tuple[str, int], ...]) -> dict[tuple[str, int], dict | None]:
     recuentos = _recuentos_en_cache(tableros)
     # Un fallo de `gh` (sin red al arrancar) no se guarda: el siguiente rerun vuelve a consultar.
     if None in recuentos.values():
@@ -212,16 +212,33 @@ COLORES_ESTADO = graficos.COLORES_ESTADO
 GRIS_ESTADO = "#8a8a8a"
 
 
-def _pastillas(cuenta: dict[str, int]) -> str:
+# La pastilla In progress parpadea mientras una sesión de Claude Code trabaja en uno de sus
+# issues; sin animación si el sistema pide menos movimiento, con un borde que la distingue igual.
+ESTILO_LATIDO = """<style>
+@keyframes latido { from { opacity: 1; } to { opacity: 0.35; } }
+.latido { animation: latido 0.9s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) {
+  .latido { animation: none; outline: 2px solid currentColor; outline-offset: 1px; }
+}
+</style>"""
+
+
+def _pastillas(cuenta: dict) -> str:
     # HTML propio: las pastillas de markdown (:color-badge[]) no dejan cambiar tamaño ni ancho.
     # Texto oscuro sobre el color: amarillo y aqua no llegan a 3:1 como color de texto.
-    return "".join(
-        f'<span title="{estado}" style="display:inline-block;min-width:2.1em;margin-left:0.3em;'
-        f"padding:0.1em 0.45em;border-radius:0.6em;text-align:center;font-weight:600;"
-        f'font-variant-numeric:tabular-nums;color:{texto};background:{fondo}">{cuenta[estado]}</span>'
-        for estado, color in zip(github.ESTADOS, COLORES_ESTADO, strict=True)
-        for texto, fondo in [("#31333F", f"{color}4d") if cuenta[estado] else (GRIS_ESTADO, "#8a8a8a1a")]
-    )
+    en_curso = cuenta.get("en_curso", [])
+    pastillas = []
+    for estado, color in zip(github.ESTADOS, COLORES_ESTADO, strict=True):
+        texto, fondo = ("#31333F", f"{color}4d") if cuenta[estado] else (GRIS_ESTADO, "#8a8a8a1a")
+        titulo, clase = estado, ""
+        if estado == "In progress" and en_curso:
+            titulo, clase = f"{estado} · {t('en_curso')}: {', '.join(en_curso)}", ' class="latido"'
+        pastillas.append(
+            f'<span{clase} title="{html.escape(titulo)}" style="display:inline-block;min-width:2.1em;'
+            f"margin-left:0.3em;padding:0.1em 0.45em;border-radius:0.6em;text-align:center;font-weight:600;"
+            f'font-variant-numeric:tabular-nums;color:{texto};background:{fondo}">{cuenta[estado]}</span>'
+        )
+    return "".join(pastillas)
 
 
 # st.text_input solo avisa al pulsar Intro o salir del campo; este buscador manda el
@@ -694,6 +711,7 @@ def render_proyectos() -> None:
     carpetas_filas = sorted({f["carpeta"] for f in filas})
     tipos_filas = sorted({f["tipo"] for f in filas if f["tipo"]}, key=str.lower)
     _colorear_pastillas([*carpetas_filas, *tipos_filas])
+    st.html(ESTILO_LATIDO)
     barra = st.container(horizontal=True, vertical_alignment="center", key="barra_lanzadera")
     with barra:
         texto = _buscar("buscar_proyecto", t("buscar.proyecto"))
