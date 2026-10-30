@@ -11,7 +11,7 @@ Las sesiones pueden correr en este equipo o en el VPS, sin conexión entre ambos
 - **La señal la da el plugin `dev` del método común**, no el launcher: `/dev:resolver-issue` y `/dev:sprint` fijan el issue en curso al pasarlo a *In progress* y `/dev:cerrar-issue` lo quita; unos hooks de la sesión mantienen la marca mientras tanto. Detalle en el README del plugin.
 - **La marca es la hora UTC (ISO 8601) en un campo de texto `Latido` del tablero.** Los hooks la reescriben como mucho cada 5 minutos mientras la sesión trabaja y la vacían al acabar cada turno.
 - **El launcher la lee en la misma consulta del recuento**: `github.recuento()` devuelve, además de los items por estado, `en_curso`, los issues *In progress* no archivados con un latido de hace menos de 15 minutos. Un tablero sin el campo devuelve `null` y no parpadea nunca.
-- **La pastilla *In progress* parpadea** (animación CSS de opacidad) si `en_curso` no está vacío, con esos issues en su tooltip. Con `prefers-reduced-motion`, sin animación y con un contorno.
+- **La pastilla *In progress* parpadea** (animación CSS de opacidad) y lleva un borde oscuro de 2 px si `en_curso` no está vacío, con esos issues en su tooltip. Con `prefers-reduced-motion`, el borde sin animación.
 - **Se acepta el retraso de la caché**: el parpadeo puede tardar hasta 10 minutos en salir o en irse, o salir al momento con **Actualizar tableros**. Sin refresco periódico.
 
 ## Alternativas descartadas

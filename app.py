@@ -213,12 +213,13 @@ GRIS_ESTADO = "#8a8a8a"
 
 
 # La pastilla In progress parpadea mientras una sesión de Claude Code trabaja en uno de sus
-# issues; sin animación si el sistema pide menos movimiento, con un borde que la distingue igual.
+# issues, con un borde oscuro para que destaque entre las demás; sin animación si el sistema
+# pide menos movimiento. El borde va por dentro (outline) para no cambiar el ancho de la fila.
 ESTILO_LATIDO = """<style>
 @keyframes latido { from { opacity: 1; } to { opacity: 0.35; } }
-.latido { animation: latido 0.9s ease-in-out infinite alternate; }
+.latido { outline: 2px solid #31333F; outline-offset: -2px; animation: latido 0.9s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) {
-  .latido { animation: none; outline: 2px solid currentColor; outline-offset: 1px; }
+  .latido { animation: none; }
 }
 </style>"""
 
