@@ -23,7 +23,7 @@ def listar(ruta: Path) -> list[dict]:
             cwd=ruta,
             check=False,
             capture_output=True,
-            text=True,
+            encoding="utf-8",
             timeout=10,
         ).stdout
     except (OSError, subprocess.TimeoutExpired):

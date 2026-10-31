@@ -25,7 +25,9 @@ def url_web(remoto: str) -> str | None:
 
 def _git(*args: str) -> str:
     try:
-        return subprocess.run(["git", *args], capture_output=True, text=True, timeout=2, check=False).stdout.strip()
+        return subprocess.run(
+            ["git", *args], capture_output=True, encoding="utf-8", timeout=2, check=False
+        ).stdout.strip()
     except (OSError, subprocess.TimeoutExpired):
         return ""
 
@@ -48,7 +50,7 @@ def tablero_id(path: Path, raiz: Path) -> tuple[str, int] | None:
             break
         fichero = carpeta / "CLAUDE.md"
         if fichero.is_file():
-            texto = fichero.read_text(errors="ignore")
+            texto = fichero.read_text(encoding="utf-8", errors="ignore")
             if "## Método" in texto:
                 coincidencia = TABLERO.search(texto)
                 return (coincidencia.group(1), int(coincidencia.group(2))) if coincidencia else None
@@ -124,7 +126,7 @@ def recuento(owner: str, numero: int) -> dict | None:
         if cursor:
             args += ["-f", f"cursor={cursor}"]
         try:
-            resultado = subprocess.run(args, capture_output=True, text=True, timeout=10, check=False)
+            resultado = subprocess.run(args, capture_output=True, encoding="utf-8", timeout=10, check=False)
             items = json.loads(resultado.stdout)["data"]["user"]["projectV2"]["items"]
         except (OSError, subprocess.TimeoutExpired, ValueError, KeyError, TypeError):
             return None

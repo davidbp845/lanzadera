@@ -103,9 +103,9 @@ def consultar(host: str) -> dict:
         # o la confirmación de una huella que nadie va a teclear desde el panel.
         resultado = subprocess.run(
             ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", host, "sh", "-s"],
-            input=SCRIPT.read_text(),
+            input=SCRIPT.read_text(encoding="utf-8"),
             capture_output=True,
-            text=True,
+            encoding="utf-8",
             timeout=TIMEOUT,
             check=False,
         )

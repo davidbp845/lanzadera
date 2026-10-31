@@ -81,7 +81,12 @@ def ram(proyectos: list[dict]) -> dict:
 
 def consultar_vps(_host: str) -> dict:
     """La misma forma que `vps.consultar`, con la salida guardada en `demo/vps.txt`."""
-    return {"secciones": vps.trocear(SALIDA_VPS.read_text()), "hora": datetime.now(), "duracion": 1.4, "error": None}
+    return {
+        "secciones": vps.trocear(SALIDA_VPS.read_text(encoding="utf-8")),
+        "hora": datetime.now(),
+        "duracion": 1.4,
+        "error": None,
+    }
 
 
 def actividad(desde: date, hasta: date) -> dict[date, int]:

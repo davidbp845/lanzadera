@@ -11,7 +11,7 @@ from pathlib import Path
 
 def _git(*args: str) -> str:
     try:
-        return subprocess.run(["git", *args], capture_output=True, text=True, timeout=5, check=False).stdout
+        return subprocess.run(["git", *args], capture_output=True, encoding="utf-8", timeout=5, check=False).stdout
     except (OSError, subprocess.TimeoutExpired):
         return ""
 

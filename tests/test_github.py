@@ -53,12 +53,12 @@ METODO = '# P\n\n## Método\n\n- Tipo: dev\n- Tablero: proyecto GitHub "P" (owne
 def test_tablero_del_claude_md_mas_cercano(tmp_path, claude_md, esperado):
     codigo = tmp_path / "Apps/p/p"
     codigo.mkdir(parents=True)
-    (tmp_path / "Apps/p/CLAUDE.md").write_text(claude_md)
+    (tmp_path / "Apps/p/CLAUDE.md").write_text(claude_md, encoding="utf-8")
     assert github.tablero(codigo, tmp_path) == esperado
 
 
 def test_tablero_no_sube_por_encima_de_la_raiz(tmp_path):
-    (tmp_path / "CLAUDE.md").write_text(METODO)
+    (tmp_path / "CLAUDE.md").write_text(METODO, encoding="utf-8")
     raiz = tmp_path / "Data"
     (raiz / "Apps/p").mkdir(parents=True)
     assert github.tablero(raiz / "Apps/p", raiz) is None
