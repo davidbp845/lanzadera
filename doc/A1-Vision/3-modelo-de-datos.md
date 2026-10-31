@@ -12,11 +12,12 @@ Cargado por `config/proyectos.py:cargar()`. Las rutas son relativas a la carpeta
 |---|---|---|---|
 | `nombre` | texto | sí | Lo que se muestra |
 | `slug` | texto | sí | Identificador estable (clave del interruptor en `st.session_state`) |
-| `puerto` | entero | no | Puerto principal: el que decide el semáforo. Sin él, el proyecto no tiene app: su fila es solo de enlaces de GitHub, sin estado ni interruptor, y no entra en Local ([ADR-0014](../A2-ADR/0014-proyectos-sin-app-solo-enlaces.md)) |
+| `puerto` | entero | no | Puerto principal: el que decide el semáforo. Sin él ni `proceso`, el proyecto no tiene app: su fila es solo de enlaces de GitHub, sin estado ni interruptor, y no entra en Local ([ADR-0014](../A2-ADR/0014-proyectos-sin-app-solo-enlaces.md)) |
+| `proceso` | texto | no | Para un proyecto sin `puerto` que corre igualmente (un script residente): texto de la línea de comando de su proceso, p. ej. el nombre del script. Está activo si algún proceso lo contiene; tiene interruptor y entra en Local, sin enlaces ([ADR-0017](../A2-ADR/0017-lanzadera-en-windows-y-proyectos-sin-puerto.md)). Tiene que ser específico: uno genérico (`python`) lo daría por activo con cualquier proceso |
 | `ruta` | texto | sí | Carpeta del proyecto, relativa a `Data`; `cwd` de `cmd` y `cmd_detener` |
 | `tipo` | texto | no | Framework principal de la app (`Streamlit`, `Astro`, `Wagtail`…), el del servicio del puerto principal. Cada valor distinto es una píldora de tipo en la Lanzadera; se muestra tal cual, así que `streamlit` y `Streamlit` serían dos ([ADR-0015](../A2-ADR/0015-tipo-de-aplicacion-en-el-registro.md)) |
 | `cmd` | lista | no | Comando de arranque. Sin él, la fila es esta misma app (no se para desde sí misma) |
-| `cmd_detener` | lista | no | Comando de parada. Sin él, `SIGTERM` al grupo de quien escucha `puerto` |
+| `cmd_detener` | lista | no | Comando de parada. Sin él, se para a quien escucha `puerto` o a los procesos de `proceso`: `SIGTERM` a su grupo en Linux, su árbol de procesos en Windows |
 | `intentos_espera_inicio` | entero | no | Intentos de 0,5 s esperando a que los puertos respondan (por defecto 20 = 10 s) |
 | `env` | tabla | no | Variables añadidas al entorno heredado (no lo sustituyen) |
 | `enlaces` | lista de `{etiqueta, puerto, ruta_url?, host?}` | no | Varios servicios: un enlace por servicio, a `http://<host>:<puerto><ruta_url>` (`host` por defecto `localhost`; [ADR-0013](../A2-ADR/0013-host-opcional-en-los-enlaces.md)). `iniciar()` espera una vez a cada puerto, aunque se repita en varios enlaces |
@@ -63,9 +64,9 @@ Solo en el modo demo ([ADR-0010](../A2-ADR/0010-demo-publica-de-solo-lectura.md)
 | Clave | Sustituye a |
 |---|---|
 | `activos` | Puertos en escucha |
-| `memoria_total_gb` | `MemTotal` de `/proc/meminfo` |
+| `memoria_total_gb` | RAM total de la máquina (`psutil`) |
 | `negocios` (`id`, `front`, `panel`, `api`) | `dev_up.sh --listar` |
 | `[github.<slug>]` (`repo`, `cuenta` por estado); `negocios`, el de los negocios | Remoto git, tablero del `CLAUDE.md` y recuento con `gh` |
-| `[ram]`, por slug: `{etiqueta, puerto?, mb}` por servicio | `ps` y `ss` |
+| `[ram]`, por slug: `{etiqueta, puerto?, mb}` por servicio | Procesos y puertos de `psutil` |
 
 `demo/vps.txt` es una salida de `scripts/estado_vps.sh`, con sus líneas `### <Sección>`.

@@ -16,6 +16,7 @@
 | Ver cuánta RAM gasta cada proyecto | Página "Local": indicadores, barra por proyecto y servicio, y la tabla en "Ver como tabla" |
 | Cambiar de idioma | Lateral: `ES` / `EN` |
 | Probar la demo de solo lectura | `HOME_LAUNCHER_DEMO=1 ./start.sh --server.port <libre>` (en `:8501` ya está el servicio) |
+| Usar la Lanzadera en Windows | `start.cmd`, que crea `venv-windows/` la primera vez; un acceso directo a él en la carpeta Inicio la arranca al entrar. `HOME_LAUNCHER_DATOS` (variable de usuario de Windows, `setx`) apunta al registro de Windows ([ADR-0017](../A2-ADR/0017-lanzadera-en-windows-y-proyectos-sin-puerto.md)) |
 
 ## Comandos de Claude Code (contenedor)
 

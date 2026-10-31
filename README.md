@@ -41,7 +41,7 @@ python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
 HOME_LAUNCHER_DEMO=1 ./venv/bin/streamlit run app.py
 ```
 
-With `HOME_LAUNCHER_DEMO=1` the app reads the sample data in [`demo/`](demo) and runs nothing on your system: no ports, `ps`/`ss`, `gh`, `git` or SSH. Switches are disabled and links to `localhost` are plain text.
+With `HOME_LAUNCHER_DEMO=1` the app reads the sample data in [`demo/`](demo) and runs nothing on your system: no ports, processes, `gh`, `git` or SSH. Switches are disabled and links to `localhost` are plain text.
 
 ## Use it with your own projects
 
@@ -57,14 +57,14 @@ puerto = 8510                # main port: decides running / stopped
 ruta = "Apps/notes-vault"    # folder, relative to HOME_LAUNCHER_RAIZ
 tipo = "Streamlit"           # optional: app type, one filter pill per value
 cmd = ["./start.sh"]         # start command, run from that folder
-# cmd_detener = ["./stop.sh"]  optional; otherwise SIGTERM to whoever listens on the port
+# cmd_detener = ["./stop.sh"]  optional; otherwise the launcher stops whoever listens on the port
 enlaces = [                  # optional: one link per service, and the switch waits for all of them
   { etiqueta = "panel", puerto = 8510 },
   { etiqueta = "telegram bot", puerto = 8511, ruta_url = "/health" },
 ]
 ```
 
-A project without `cmd` is the launcher itself. A project without `puerto` has no app: its row only shows its GitHub repo and board, with no state or switch. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: Its rows have type `heruka-flow`; without it there are no business rows and no `heruka-flow` filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
+A project without `cmd` is the launcher itself. A project without `puerto` but with `proceso` (text from its process's command line, such as its script name) is running while some process carries that text: useful for resident scripts with no port. A project with neither has no app: its row only shows its GitHub repo and board, with no state or switch. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: Its rows have type `heruka-flow`; without it there are no business rows and no `heruka-flow` filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
 
 **`enlaces.csv`**: `descripcion,enlace,etiquetas`, with several tags separated by `;`. Other apps add a row with `python3 scripts/anadir_enlace.py "description" "url" "tag1;tag2"`: it rejects URLs without `http(s)://` and duplicates (exit code `1`) and never commits.
 
@@ -79,7 +79,7 @@ A project without `cmd` is the launcher itself. A project without `puerto` has n
 | `HOME_LAUNCHER_DEMO` | `1` for the read-only demo |
 | `HOME_LAUNCHER_IDIOMA` | Initial language, `es` or `en` (default `es`; `en` in demo mode); switch it in the sidebar |
 
-Run it with `./start.sh` (port 8501, localhost only, set in `.streamlit/config.toml`). It has no authentication: never expose it to a network. For daily use there is a systemd user service in [`deploy/`](deploy).
+Run it with `./start.sh` (port 8501, localhost only, set in `.streamlit/config.toml`). It has no authentication: never expose it to a network. For daily use there is a systemd user service in [`deploy/`](deploy). On Windows, run `start.cmd` instead: it creates its own `venv-windows/` the first time; a shortcut to it in the Startup folder starts it at logon. Processes, ports and RAM are read with `psutil` on both systems.
 
 ## Development
 
@@ -89,7 +89,7 @@ Run it with `./start.sh` (port 8501, localhost only, set in `.streamlit/config.t
 ./venv/bin/ruff check . && ./venv/bin/ruff format --check .
 ```
 
-Tests use only `tests/fixtures/` and `demo/`. None of them starts processes, opens SSH connections or needs real data, and the demo tests fail if anything calls `subprocess` or opens a socket.
+Tests use only `tests/fixtures/` and `demo/`. None of them starts processes, opens SSH connections or needs real data, and the demo tests fail if anything calls `subprocess`, opens a socket or reads processes with `psutil`.
 
 ```
 app.py              # Streamlit pages and process control
@@ -104,6 +104,7 @@ ram.py              # real RAM (RSS) of each running project
 negocios.py         # heruka-flow businesses and their ports (dev_up.sh --listar)
 github.py           # each project's repo and board, and board counts with gh
 scripts/            # estado_vps.sh, the read-only script sent to the VPS; anadir_enlace.py, to add a link
+start.cmd           # starts the launcher on Windows, with venv-windows/
 tests/              # pytest and AppTest, with fictitious fixtures
 deploy/             # systemd user service
 doc/                # design docs (in Spanish): vision, ADRs, mockups

@@ -46,6 +46,13 @@ python3 <ruta a lanzadera>/scripts/anadir_enlace.py "descripcion" "url" "etiquet
 
 Ver [ADR-0006](../A2-ADR/0006-el-launcher-como-servicio-de-systemd.md).
 
+## Windows (carpeta Inicio)
+
+- En Windows no hay servicio: un acceso directo a `start.cmd` en la carpeta Inicio (`shell:startup`) arranca el launcher al entrar en la sesión. `start.cmd` usa `venv-windows/`, porque `venv/` es el de Linux y la carpeta puede estar compartida entre los dos sistemas.
+- Los proyectos de Windows llevan en `cmd` su propio script o ejecutable (`.cmd`, `.ps1`, el intérprete con su script), nunca un `start.sh`.
+
+Ver [ADR-0017](../A2-ADR/0017-lanzadera-en-windows-y-proyectos-sin-puerto.md).
+
 ## Terminal
 
 `/crear-atajo` mantiene en `~/.bashrc` una función por proyecto de `Data/` (`_proyecto Grupo/carpeta`), que entra en la carpeta y abre `claude`. home es la carpeta del contenedor (`Apps/home`).
