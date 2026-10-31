@@ -34,4 +34,4 @@ Además, en Windows hay proyectos que corren sin escuchar en ningún puerto, com
 
 ## Estado
 
-Propuesta — issue [#9](https://github.com/davidbp845/lanzadera/issues/9).
+Aceptada (2026-10-31) — issue [#9](https://github.com/davidbp845/lanzadera/issues/9).
