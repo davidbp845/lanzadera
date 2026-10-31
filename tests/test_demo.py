@@ -10,7 +10,6 @@ from streamlit.testing.v1 import AppTest
 import actividad
 import demo
 import graficos
-import ram
 import textos
 import vps
 from config import paths
@@ -147,13 +146,6 @@ def test_commits_por_dia_suma_los_repositorios_y_rellena_con_ceros(monkeypatch):
     monkeypatch.setattr(actividad, "_git", lambda *args: salidas[Path(args[1]).name])
     commits = actividad.commits_por_dia({Path("a"), Path("b")}, date(2026, 10, 19), date(2026, 10, 22))
     assert list(commits.values()) == [0, 2, 0, 2]
-
-
-def test_memoria_total_de_la_maquina(tmp_path):
-    meminfo = tmp_path / "meminfo"
-    meminfo.write_text("MemTotal:       16303932 kB\nMemFree:         1234 kB\n")
-    assert ram.memoria_total_kb(meminfo) == 16303932
-    assert ram.memoria_total_kb(tmp_path / "no-existe") is None
 
 
 @pytest.mark.parametrize(

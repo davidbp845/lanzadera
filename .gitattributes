@@ -1,0 +1,2 @@
+# Los .cmd de Windows necesitan CRLF aunque se editen en Linux.
+*.cmd text eol=crlf

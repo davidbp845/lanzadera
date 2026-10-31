@@ -207,3 +207,49 @@ def test_local_mide_los_negocios_o_el_single(lanzadera, monkeypatch, listar, fil
     assert not at.exception
     assert [p["slug"] for p in medidos] == ["esta", "simple", "multi", fila]
     assert [puerto for _etiqueta, puerto, _ruta, _host in medidos[-1].get("enlaces", [])] == puertos
+
+
+ATAJOS = """
+# Sin puerto pero con proceso (ADR-0017): estado por la línea de comando de sus procesos.
+[[proyecto]]
+nombre = "Atajos"
+slug = "atajos"
+ruta = "Windows/atajos"
+cmd = ["./arrancar.sh"]
+proceso = "atajos.ahk"
+"""
+
+
+@pytest.fixture
+def con_proceso(lanzadera, monkeypatch, tmp_path):
+    """El registro de fixtures con un proyecto sin puerto que se reconoce por su proceso."""
+    registro = (FIXTURES / "proyectos.toml").read_text()
+    corte = registro.index("[negocios]")
+    (tmp_path / "proyectos.toml").write_text(registro[:corte] + ATAJOS + "\n" + registro[corte:])
+    monkeypatch.setenv("HOME_LAUNCHER_DATOS", str(tmp_path))
+    con_proceso.filas = {}
+    con_proceso.terminados = []
+    monkeypatch.setattr(ram, "leer_procesos", lambda: con_proceso.filas)
+    monkeypatch.setattr(ram, "terminar", lambda pid, windows: con_proceso.terminados.append(pid))
+    return con_proceso
+
+
+@pytest.mark.parametrize(
+    ("filas", "estado"), [({}, "parado"), ({700: (1, 0, "AutoHotkey64.exe atajos.ahk")}, "activo")]
+)
+def test_un_proyecto_sin_puerto_con_proceso_tiene_estado_e_interruptor(con_proceso, filas, estado):
+    con_proceso.filas = filas
+    at = _abrir()
+    assert not at.exception
+    assert at.toggle(key="switch_atajos").value == (estado == "activo")
+    at.button_group(key="filtros_lanzadera").set_value([estado]).run()
+    assert "**Atajos**" in _nombres(at)
+
+
+def test_parar_un_proyecto_sin_puerto_termina_sus_procesos(con_proceso, monkeypatch):
+    con_proceso.filas = {700: (1, 0, "cmd.exe /c arrancar.cmd"), 701: (700, 0, "AutoHotkey64.exe atajos.ahk")}
+    at = _abrir()
+    monkeypatch.setattr(time, "sleep", lambda _segundos: None)
+    at.toggle(key="switch_atajos").set_value(False).run()
+    assert not at.exception
+    assert con_proceso.terminados == [701]

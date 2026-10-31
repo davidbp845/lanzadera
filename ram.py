@@ -1,11 +1,13 @@
-"""RAM real (RSS) de cada proyecto activo del registro, como la calcula `/uso-ram`."""
+"""RAM real (RSS) de cada proyecto activo del registro, como la calcula `/uso-ram`, con `psutil` (ADR-0017)."""
 
 import os
 import re
-import subprocess
+import signal
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+
+import psutil
 
 # pid -> (ppid, rss en KB, línea de comando)
 Filas = dict[int, tuple[int, int, str]]
@@ -13,15 +15,17 @@ Filas = dict[int, tuple[int, int, str]]
 SCRIPT_ARRANQUE = "Script de arranque"
 
 
-def parsear_ps(salida: str) -> Filas:
-    """Lee la salida de `ps -eo pid=,ppid=,rss=,args=`."""
+def leer_procesos() -> Filas:
+    """Todos los procesos visibles, con `psutil` (Linux y Windows, ADR-0017)."""
     filas: Filas = {}
-    for linea in salida.splitlines():
-        partes = linea.split(None, 3)
-        if len(partes) < 3:
-            continue
-        pid, ppid, rss = (int(p) for p in partes[:3])
-        filas[pid] = (ppid, rss, partes[3] if len(partes) == 4 else "")
+    for proceso in psutil.process_iter(["ppid", "memory_info", "cmdline"]):
+        info = proceso.info
+        memoria = info["memory_info"]
+        filas[proceso.pid] = (
+            info["ppid"] or 0,
+            memoria.rss // 1024 if memoria else 0,
+            " ".join(info["cmdline"] or []),
+        )
     return filas
 
 
@@ -40,47 +44,75 @@ def descendientes(raiz: int, filas: Filas) -> set[int]:
     return visto
 
 
-def parsear_ss(salida: str) -> dict[int, int | None]:
-    """Lee `ss -H -ltnp`: puerto en escucha -> PID, o None si es de otro usuario.
-
-    Sin root, `ss` lista los puertos de root (docker-proxy) pero no dice su PID.
-    """
+def puertos_de(conexiones) -> dict[int, int | None]:
+    """Puerto TCP en escucha -> PID, o None si es de otro usuario (sin root no se ve su PID)."""
     puertos: dict[int, int | None] = {}
-    for linea in salida.splitlines():
-        campos = linea.split()
-        if len(campos) < 4:
+    for conexion in conexiones:
+        if conexion.status != psutil.CONN_LISTEN:
             continue
-        puerto = int(campos[3].rsplit(":", 1)[1])
-        coincidencia = re.search(r"pid=(\d+)", linea)
-        if coincidencia:
-            puertos[puerto] = int(coincidencia.group(1))
+        if conexion.pid is not None:
+            puertos[conexion.laddr.port] = conexion.pid
         else:
             # La misma escucha en IPv4 e IPv6 sale dos veces: no se pisa un PID ya visto.
-            puertos.setdefault(puerto, None)
+            puertos.setdefault(conexion.laddr.port, None)
     return puertos
 
 
-def _ss(*filtro: str) -> dict[int, int | None]:
+def puertos_en_escucha() -> dict[int, int | None]:
     try:
-        salida = subprocess.run(
-            ["ss", "-H", "-ltnp", *filtro], check=False, capture_output=True, text=True, timeout=1
-        ).stdout
-    except (OSError, subprocess.TimeoutExpired):
+        return puertos_de(psutil.net_connections("tcp"))
+    except (psutil.Error, OSError):
         return {}
-    return parsear_ss(salida)
 
 
 def pid_en_puerto(puerto: int) -> int | None:
     # Fuente de verdad: quien esté escuchando realmente el puerto, sea quien
     # sea quien lo haya arrancado (el panel, o algo lanzado a mano antes).
-    return _ss(f"sport = :{puerto}").get(puerto)
+    return puertos_en_escucha().get(puerto)
 
 
 def _cwd(pid: int) -> str | None:
     try:
-        return os.readlink(f"/proc/{pid}/cwd")
-    except OSError:
+        return psutil.Process(pid).cwd()
+    except psutil.Error:
         return None
+
+
+def terminar(pid: int, windows: bool = os.name == "nt", espera: float = 3) -> None:
+    """Para un proyecto sin `cmd_detener` (ADR-0003, ADR-0017)."""
+    if not windows:
+        # SIGTERM al grupo: alcanza también a los procesos que se desligaron de su padre.
+        try:
+            os.killpg(os.getpgid(pid), signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass
+        return
+    # Windows no tiene grupos de sesión: el proceso y sus hijos, y kill a los que sigan vivos.
+    try:
+        raiz = psutil.Process(pid)
+        procesos = [raiz, *raiz.children(recursive=True)]
+    except psutil.Error:
+        return
+    for proceso in procesos:
+        try:
+            proceso.terminate()
+        except psutil.Error:
+            pass
+    _terminados, vivos = psutil.wait_procs(procesos, timeout=espera)
+    for proceso in vivos:
+        try:
+            proceso.kill()
+        except psutil.Error:
+            pass
+
+
+def raices_de_proceso(texto: str, filas: Filas) -> set[int]:
+    """Los procesos de un proyecto sin puerto: los que llevan `texto` en su línea de comando (ADR-0017).
+
+    Si un wrapper y el proceso que lanza lo llevan los dos, la raíz es el de más arriba.
+    """
+    candidatos = {pid for pid, (_ppid, _rss, args) in filas.items() if texto in args and pid != os.getpid()}
+    return {pid for pid in candidatos if filas[pid][0] not in candidatos}
 
 
 # Lo que puede ir delante del programa en la línea de comando: el shebang de un
@@ -88,14 +120,20 @@ def _cwd(pid: int) -> str | None:
 INTERPRETES = {"sh", "bash", "dash", "zsh", "node", "python", "python3"}
 
 
+def _nombre(ruta: str) -> str:
+    # Último componente con `/` o `\` (Windows), sin `.exe`: `C:\Python\python.exe` es `python`.
+    nombre = re.split(r"[\\/]", ruta)[-1]
+    return nombre[:-4] if nombre.lower().endswith(".exe") else nombre
+
+
 def _ejecuta(cmd: list[str], args: str) -> bool:
     """Si la línea de comando lanza `cmd`: su programa al principio o tras un intérprete, y sus argumentos detrás.
 
     Así `vim start.sh` o `npm install` en la misma carpeta no pasan por `./start.sh` o `npm run dev`.
     """
-    programa = cmd[0].rsplit("/", 1)[-1]
+    programa = _nombre(cmd[0])
     palabras = args.split()
-    nombres = [palabra.rsplit("/", 1)[-1] for palabra in palabras]
+    nombres = [_nombre(palabra) for palabra in palabras]
     return any(
         nombre == programa and (i == 0 or nombres[i - 1] in INTERPRETES) and palabras[i + 1 : i + len(cmd)] == cmd[1:]
         for i, nombre in enumerate(nombres)
@@ -125,6 +163,12 @@ def _kb(pids: set[int], filas: Filas) -> int:
 
 
 def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None], cwd_de) -> dict | None:
+    if proyecto["puerto"] is None and proyecto.get("proceso"):
+        raices = raices_de_proceso(proyecto["proceso"], filas)
+        if not raices:
+            return None
+        pids = set().union(*(descendientes(raiz, filas) for raiz in raices))
+        return {"nombre": proyecto["nombre"], "puerto": None, "pids": pids, "kb": _kb(pids, filas), "desglose": []}
     # Sin puerto principal (el stack de negocios), cuenta como activo si escucha cualquiera de sus servicios.
     puertos_estado = (
         [proyecto["puerto"]]
@@ -182,8 +226,9 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
 def medir(proyectos: list[dict], filas: Filas, puertos: dict[int, int | None], cwd_de=_cwd) -> dict:
     """`{"proyectos": [...], "compartidos": [(nombre, nombre)]}`, de mayor a menor consumo.
 
-    `puertos` es la salida de `parsear_ss`. Solo cuenta los proyectos con algo escuchando
-    en su puerto principal (o, si no tienen, en el de algún enlace); los de otro usuario
+    `puertos` es la salida de `puertos_de`. Solo cuenta los proyectos con algo escuchando
+    en su puerto principal (o, si no tienen, en el de algún enlace) o, sin puerto, con un
+    proceso que lleve su `proceso`; los de otro usuario
     van al final con `kb` None. `compartidos`
     lista los pares con PIDs en común: si no está vacío, se ha contado RAM dos veces.
     """
@@ -232,14 +277,12 @@ def fila_heruka_flow(
 
 
 def consultar(proyectos: list[dict]) -> dict:
-    """Lee `ps` y `ss` una vez cada uno y mide: `{"medicion", "hora", "error"}`; `error` es None si fue bien."""
+    """Lee procesos y puertos una vez y mide: `{"medicion", "hora", "error"}`; `error` es None si fue bien."""
     try:
-        salida = subprocess.run(
-            ["ps", "-eo", "pid=,ppid=,rss=,args="], capture_output=True, text=True, check=True, timeout=5
-        ).stdout
-    except (OSError, subprocess.SubprocessError) as e:
+        filas = leer_procesos()
+    except (psutil.Error, OSError) as e:
         return {"medicion": None, "hora": datetime.now(), "error": str(e)}
-    return {"medicion": medir(proyectos, parsear_ps(salida), _ss()), "hora": datetime.now(), "error": None}
+    return {"medicion": medir(proyectos, filas, puertos_en_escucha()), "hora": datetime.now(), "error": None}
 
 
 def formatear(kb: int) -> str:
@@ -248,12 +291,9 @@ def formatear(kb: int) -> str:
     return texto.replace(".", ",")
 
 
-def memoria_total_kb(meminfo: Path = Path("/proc/meminfo")) -> int | None:
-    """RAM total de la máquina (`MemTotal`), para poner el total de los proyectos en contexto."""
+def memoria_total_kb() -> int | None:
+    """RAM total de la máquina, para poner el total de los proyectos en contexto."""
     try:
-        for linea in meminfo.read_text().splitlines():
-            if linea.startswith("MemTotal:"):
-                return int(linea.split()[1])
-    except (OSError, ValueError, IndexError):
-        pass
-    return None
+        return psutil.virtual_memory().total // 1024
+    except (psutil.Error, OSError):
+        return None

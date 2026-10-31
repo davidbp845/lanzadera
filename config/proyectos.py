@@ -7,12 +7,14 @@ from config import paths
 
 
 def _proyecto(entrada: dict, raiz: Path) -> dict:
-    # Sin puerto, el proyecto no tiene app: su fila es solo de enlaces de GitHub (ADR-0014).
+    # Sin puerto ni proceso, el proyecto no tiene app: su fila es solo de enlaces de GitHub (ADR-0014).
+    # Sin puerto pero con proceso, su estado sale de la línea de comando de sus procesos (ADR-0017).
     proyecto = {
         **entrada,
         "path": raiz / entrada["ruta"],
         "cmd": entrada.get("cmd"),
         "puerto": entrada.get("puerto"),
+        "proceso": entrada.get("proceso"),
         "tipo": entrada.get("tipo"),
     }
     if "enlaces" in entrada:

@@ -1,5 +1,6 @@
 # Entornos virtuales
 venv/
+venv-windows/
 .venv/
 
 # Bytecode y cachés

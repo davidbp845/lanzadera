@@ -1,7 +1,6 @@
 import html
 import json
 import os
-import signal
 import socket
 import subprocess
 import time
@@ -53,8 +52,9 @@ st.set_page_config(page_title=t("pagina.Lanzadera"), page_icon="🏠", layout="w
 # código (ADR-0001); aquí solo se cargan.
 REGISTRO = cargar_registro()
 PROYECTOS = REGISTRO["proyectos"]
-# Los que tienen puerto: los únicos que cuentan en Local (puertos y RAM).
-PROYECTOS_CON_APP = [p for p in PROYECTOS if p["puerto"] is not None]
+# Los que tienen app (puerto o proceso): los únicos que cuentan en Local (puertos y RAM).
+PROYECTOS_CON_APP = [p for p in PROYECTOS if p["puerto"] is not None or p["proceso"]]
+WINDOWS = os.name == "nt"
 HERUKA_FLOW = REGISTRO["heruka_flow"]
 INTENTOS_ESPERA_NEGOCIOS = REGISTRO["intentos_negocios"]
 HERUKA_LIFE_SINGLE = REGISTRO["heruka_life_single"]
@@ -77,9 +77,29 @@ def _puerto_activo(puerto: int, host: str = "127.0.0.1", timeout: float = 0.3) -
         return s.connect_ex((host, puerto)) == 0
 
 
+def _pids_de_proceso(proyecto: dict) -> set[int]:
+    return ram.raices_de_proceso(proyecto["proceso"], ram.leer_procesos())
+
+
 def esta_activo(proyecto: dict) -> bool | None:
-    """`None` si el proyecto no tiene puerto: sin app, no tiene estado (ADR-0014)."""
-    return None if proyecto["puerto"] is None else _puerto_activo(proyecto["puerto"])
+    """`None` si el proyecto no tiene puerto ni proceso: sin app, no tiene estado (ADR-0014, ADR-0017)."""
+    if proyecto["puerto"] is not None:
+        return _puerto_activo(proyecto["puerto"])
+    if proyecto["proceso"]:
+        # La demo no mira los procesos del sistema (ADR-0010).
+        return False if DEMO else bool(_pids_de_proceso(proyecto))
+    return None
+
+
+def _esperar_activo(proyecto: dict, activo_esperado: bool, intentos: int = 20, espera: float = 0.5) -> None:
+    """Como `_esperar_puerto`, por el puerto principal o, sin él, por `proceso`."""
+    if proyecto["puerto"] is not None:
+        _esperar_puerto(proyecto["puerto"], activo_esperado, intentos, espera)
+        return
+    for _ in range(intentos):
+        if esta_activo(proyecto) == activo_esperado:
+            return
+        time.sleep(espera)
 
 
 def _esperar_puerto(puerto: int, activo_esperado: bool, intentos: int = 20, espera: float = 0.5) -> None:
@@ -99,13 +119,16 @@ def iniciar(proyecto: dict) -> None:
     # entorno heredado, no un reemplazo — igual que dotenv, que nunca pisa
     # una variable ya presente en el proceso.
     env = {**os.environ, **proyecto.get("env", {})}
+    # Desligado del launcher para que sobreviva a un reinicio del panel: en Linux, sesión
+    # propia; en Windows, grupo de procesos propio (ADR-0017).
+    separado = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if WINDOWS else {"start_new_session": True}
     subprocess.Popen(
         proyecto["cmd"],
         cwd=proyecto["path"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        start_new_session=True,
         env=env,
+        **separado,
     )
     # Por defecto _esperar_puerto espera como mucho 10s (intentos=20 x
     # espera=0.5s) — de sobra para la mayoría, pero Heruka Consola tarda
@@ -113,7 +136,7 @@ def iniciar(proyecto: dict) -> None:
     # comentario en su entrada de PROYECTOS). Sin este override, el toggle
     # vuelve a "parado" antes de que el puerto responda de verdad.
     intentos = proyecto.get("intentos_espera_inicio", 20)
-    _esperar_puerto(proyecto["puerto"], activo_esperado=True, intentos=intentos)
+    _esperar_activo(proyecto, activo_esperado=True, intentos=intentos)
     # Proyectos multi-servicio (p. ej. Heruka Life) listan cada puerto en
     # "enlaces" para mostrar varios enlaces en la UI — pero eso no
     # garantiza que "puerto" sea el último en estar listo: el panel de
@@ -145,17 +168,19 @@ def detener(proyecto: dict) -> None:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        _esperar_puerto(proyecto["puerto"], activo_esperado=False)
+        _esperar_activo(proyecto, activo_esperado=False)
         return
 
-    pid = ram.pid_en_puerto(proyecto["puerto"])
-    if pid is None:
+    if proyecto["puerto"] is not None:
+        pid = ram.pid_en_puerto(proyecto["puerto"])
+        pids = set() if pid is None else {pid}
+    else:
+        pids = _pids_de_proceso(proyecto)
+    if not pids:
         return
-    try:
-        os.killpg(os.getpgid(pid), signal.SIGTERM)
-    except (ProcessLookupError, PermissionError):
-        pass
-    _esperar_puerto(proyecto["puerto"], activo_esperado=False)
+    for pid in pids:
+        ram.terminar(pid, windows=WINDOWS)
+    _esperar_activo(proyecto, activo_esperado=False)
 
 
 def cargar_enlaces() -> pd.DataFrame:
@@ -401,19 +426,20 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
         COLUMNAS_LANZADERA, vertical_alignment="center"
     )
     nombre.markdown(f"**{proyecto['nombre']}**")
-    if proyecto["puerto"] is None:
+    if proyecto["puerto"] is None and not proyecto["proceso"]:
         for columna in (puerto, estado, enlaces, interruptor):
             columna.markdown(":gray[—]")
         _pintar_github(enlaces_github, proyecto["path"])
         return
-    puerto.markdown(str(proyecto["puerto"]))
+    # Sin puerto pero con proceso (ADR-0017): estado e interruptor, sin puerto ni enlace que abrir.
+    puerto.markdown(":gray[—]" if proyecto["puerto"] is None else str(proyecto["puerto"]))
 
     if proyecto["cmd"] is None:
         estado.markdown(t("estado.activa"))
     else:
         estado.markdown(t("estado.activo") if activo else t("estado.parado"))
 
-    if activo and proyecto["cmd"] is not None:
+    if activo and proyecto["cmd"] is not None and proyecto["puerto"] is not None:
         lista = proyecto.get("enlaces", [(t("enlace.abrir"), proyecto["puerto"], "", "localhost")])
         _pintar_enlaces(
             enlaces,
@@ -1086,7 +1112,8 @@ def _puertos_registro() -> list[tuple[int, str, bool]]:
     """`(puerto, nombre, escucha)` de cada puerto del registro: el principal y los de sus enlaces."""
     puertos = {}
     for p in PROYECTOS_CON_APP:
-        puertos[p["puerto"]] = p["nombre"]
+        if p["puerto"] is not None:
+            puertos[p["puerto"]] = p["nombre"]
         for etiqueta, puerto, _ruta, _host in p.get("enlaces", []):
             puertos.setdefault(puerto, f"{p['nombre']} · {etiqueta}")
     if CON_NEGOCIOS:

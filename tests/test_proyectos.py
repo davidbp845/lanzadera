@@ -100,3 +100,12 @@ def test_el_registro_real_carga():
         pytest.skip("sin contenedor de datos")
     registro = cargar()
     assert registro["proyectos"]
+
+
+def test_proceso_es_opcional(tmp_path):
+    (tmp_path / "proyectos.toml").write_text(
+        '[[proyecto]]\nnombre = "Atajos"\nslug = "atajos"\nruta = "Windows/atajos"\ncmd = ["x.cmd"]\nproceso = "atajos.ahk"\n'
+    )
+    (atajos,) = cargar(tmp_path / "proyectos.toml", tmp_path)["proyectos"]
+    assert (atajos["puerto"], atajos["proceso"]) == (None, "atajos.ahk")
+    assert cargar(FIXTURE, tmp_path)["proyectos"][0]["proceso"] is None

@@ -1,6 +1,8 @@
+from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
 
+import psutil
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -27,24 +29,43 @@ CWD = {200: "/data/Apps/simple", 300: "/data/Otros/multi", 400: "/data/Apps/otro
 PUERTOS = {9501: 100, 9502: 201, 9503: 310, 9504: 302}
 
 
+def _filas(texto: str) -> ram.Filas:
+    """Procesos escritos como `pid ppid rss_kb línea de comando`, una línea por proceso."""
+    filas = {}
+    for linea in texto.splitlines():
+        partes = linea.split(None, 3)
+        if len(partes) >= 3:
+            filas[int(partes[0])] = (int(partes[1]), int(partes[2]), partes[3] if len(partes) == 4 else "")
+    return filas
+
+
 @pytest.fixture
 def proyectos():
     return cargar(FIXTURES / "proyectos.toml", RAIZ)["proyectos"]
 
 
 def _medir(proyectos, puertos=PUERTOS):
-    return ram.medir(proyectos, ram.parsear_ps(PS), puertos, CWD.get)
+    return ram.medir(proyectos, _filas(PS), puertos, CWD.get)
 
 
 def _por_nombre(medicion):
     return {m["nombre"]: m for m in medicion["proyectos"]}
 
 
-def test_parsea_ps_con_argumentos_y_sin_ellos():
-    assert ram.parsear_ps("  7  1  300 bash ./up.sh --skip\n  8  7  0\n\n") == {
-        7: (1, 300, "bash ./up.sh --skip"),
-        8: (7, 0, ""),
-    }
+class _Proceso:
+    def __init__(self, pid, info):
+        self.pid, self.info = pid, info
+
+
+def test_lee_procesos_con_y_sin_acceso(monkeypatch):
+    memoria = namedtuple("memoria", "rss")
+    procesos = [
+        _Proceso(7, {"ppid": 1, "memory_info": memoria(300 * 1024), "cmdline": ["bash", "./up.sh", "--skip"]}),
+        # De otro usuario o de sistema: psutil da None en lo que no puede leer.
+        _Proceso(8, {"ppid": None, "memory_info": None, "cmdline": None}),
+    ]
+    monkeypatch.setattr(psutil, "process_iter", lambda _atributos: iter(procesos))
+    assert ram.leer_procesos() == {7: (1, 300, "bash ./up.sh --skip"), 8: (0, 0, "")}
 
 
 def test_ram_por_proyecto_de_mayor_a_menor(proyectos):
@@ -61,15 +82,20 @@ def test_esta_app_no_suma_los_proyectos_que_arranco(proyectos):
     assert _por_nombre(_medir(proyectos))["Esta app"]["pids"] == {100}
 
 
-def test_parsea_ss_con_puertos_de_otro_usuario():
-    salida = (
-        'LISTEN 0 128 127.0.0.1:8501 0.0.0.0:* users:(("streamlit",pid=100,fd=6))\n'
-        "LISTEN 0 4096 0.0.0.0:8510 0.0.0.0:*\n"
-        'LISTEN 0 511 [::]:8510 [::]:* users:(("docker-proxy",pid=7,fd=4))\n'
-        "LISTEN 0 4096 [::]:8510 [::]:*\n"
-    )
-    assert ram.parsear_ss(salida) == {8501: 100, 8510: 7}
-    assert ram.parsear_ss("LISTEN 0 4096 *:8511 *:*\n") == {8511: None}
+Conexion = namedtuple("Conexion", "laddr status pid")
+Direccion = namedtuple("Direccion", "ip port")
+
+
+def test_puertos_en_escucha_con_puertos_de_otro_usuario():
+    conexiones = [
+        Conexion(Direccion("127.0.0.1", 8501), psutil.CONN_LISTEN, 100),
+        Conexion(Direccion("0.0.0.0", 8510), psutil.CONN_LISTEN, None),
+        Conexion(Direccion("::", 8510), psutil.CONN_LISTEN, 7),
+        Conexion(Direccion("::", 8510), psutil.CONN_LISTEN, None),
+        Conexion(Direccion("127.0.0.1", 40000), psutil.CONN_ESTABLISHED, 100),
+    ]
+    assert ram.puertos_de(conexiones) == {8501: 100, 8510: 7}
+    assert ram.puertos_de([Conexion(Direccion("::", 8511), psutil.CONN_LISTEN, None)]) == {8511: None}
 
 
 # Además de las raíces de verdad (bash -> bash relanzado, dos instancias), procesos de
@@ -88,7 +114,7 @@ RAICES = """  500     1  0 bash ./start.sh
     [(["./start.sh"], {500, 510}), (["npm", "run", "dev", "--", "--port", "8508"], {540})],
 )
 def test_raices_reales_por_comando_y_carpeta(cmd, esperado):
-    filas = ram.parsear_ps(RAICES)
+    filas = _filas(RAICES)
     assert ram.raices_reales(cmd, RAIZ / "Apps/x", filas, lambda pid: "/data/Apps/x") == esperado
 
 
@@ -165,7 +191,7 @@ NEGOCIOS = ram.fila_heruka_flow(
 
 
 def _medir_negocios(puertos):
-    return ram.medir([NEGOCIOS], ram.parsear_ps(PS_NEGOCIOS), puertos, {600: "/data/Otros/negocios"}.get)
+    return ram.medir([NEGOCIOS], _filas(PS_NEGOCIOS), puertos, {600: "/data/Otros/negocios"}.get)
 
 
 def test_negocios_sin_puerto_principal_con_el_backend_en_una_linea():
@@ -189,3 +215,78 @@ def test_negocios_activos_por_cualquier_servicio(puertos, kb):
 
 def test_sin_negocios_la_fila_es_el_single():
     assert ram.fila_heruka_flow([], RAIZ / "Otros/negocios", {"nombre": "Único"}) == {"nombre": "Único"}
+
+
+# Proyecto sin puerto (ADR-0017): un script de AutoHotkey lanzado con un .cmd que se queda de padre.
+PS_PROCESO = """\
+  700     1   1000 cmd.exe /c start.cmd
+  701   700  30000 C:\\AutoHotkey\\AutoHotkey64.exe atajos.ahk
+  702   701   5000 C:\\AutoHotkey\\AutoHotkey64.exe atajos.ahk /child
+  710     1   2000 notepad.exe otro.ahk
+"""
+SIN_PUERTO = {"nombre": "Atajos", "puerto": None, "proceso": "atajos.ahk"}
+
+
+def test_raices_de_proceso_toma_el_de_mas_arriba():
+    assert ram.raices_de_proceso("atajos.ahk", _filas(PS_PROCESO)) == {701}
+    assert ram.raices_de_proceso("no-existe.ahk", _filas(PS_PROCESO)) == set()
+
+
+def test_mide_un_proyecto_sin_puerto_por_proceso():
+    (medido,) = ram.medir([SIN_PUERTO], _filas(PS_PROCESO), {})["proyectos"]
+    assert (medido["puerto"], medido["pids"], medido["kb"]) == (None, {701, 702}, 35000)
+    assert ram.medir([{**SIN_PUERTO, "proceso": "parado.ahk"}], _filas(PS_PROCESO), {})["proyectos"] == []
+
+
+def test_raices_reales_con_rutas_de_windows():
+    filas = _filas(PS_PROCESO)
+    cmd = ["AutoHotkey64.exe", "atajos.ahk"]
+    assert ram.raices_reales(cmd, RAIZ / "Windows/atajos", filas, lambda pid: "/data/Windows/atajos") == {701}
+
+
+class _Arbol:
+    """Proceso simulado de psutil: registra lo que se le hace."""
+
+    def __init__(self, pid, hijos=(), sigue_vivo=False):
+        self.pid, self.hijos, self.sigue_vivo, self.hecho = pid, list(hijos), sigue_vivo, []
+
+    def children(self, recursive):
+        return self.hijos
+
+    def terminate(self):
+        self.hecho.append("terminate")
+
+    def kill(self):
+        self.hecho.append("kill")
+
+
+def test_terminar_en_windows_para_el_arbol_y_mata_lo_que_queda(monkeypatch):
+    hijo = _Arbol(702, sigue_vivo=True)
+    raiz = _Arbol(701, [hijo])
+
+    def wait_procs(procesos, timeout):
+        return [p for p in procesos if not p.sigue_vivo], [p for p in procesos if p.sigue_vivo]
+
+    monkeypatch.setattr(psutil, "Process", lambda pid: raiz)
+    monkeypatch.setattr(psutil, "wait_procs", wait_procs)
+    ram.terminar(701, windows=True)
+    assert (raiz.hecho, hijo.hecho) == (["terminate"], ["terminate", "kill"])
+
+
+def test_terminar_en_linux_manda_sigterm_al_grupo(monkeypatch):
+    enviados = []
+    monkeypatch.setattr(ram.os, "getpgid", lambda pid: pid * 10)
+    monkeypatch.setattr(ram.os, "killpg", lambda grupo, senal: enviados.append((grupo, senal)))
+    ram.terminar(701, windows=False)
+    assert enviados == [(7010, ram.signal.SIGTERM)]
+
+
+def test_memoria_total_de_la_maquina(monkeypatch):
+    monkeypatch.setattr(psutil, "virtual_memory", lambda: namedtuple("memoria", "total")(16303932 * 1024))
+    assert ram.memoria_total_kb() == 16303932
+
+    def falla():
+        raise OSError
+
+    monkeypatch.setattr(psutil, "virtual_memory", falla)
+    assert ram.memoria_total_kb() is None
