@@ -23,4 +23,4 @@ Un proyecto puede arrancarse desde home, desde una terminal o desde systemd. Gua
 
 ## Estado
 
-Aceptada (espera a todos los puertos desde 2026-09-14).
+Aceptada (espera a todos los puertos desde 2026-09-14). Ampliada por [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md).

@@ -27,4 +27,4 @@ Dejar de exigir una clave del registro es código y lleva ADR ([0004](0004-regis
 
 ## Estado
 
-Aceptada (2026-10-29) — issue [#7](https://github.com/davidbp845/lanzadera/issues/7).
+Aceptada (2026-10-29) — issue [#7](https://github.com/davidbp845/lanzadera/issues/7). Ampliada por [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md).

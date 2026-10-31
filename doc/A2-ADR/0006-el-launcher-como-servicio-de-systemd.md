@@ -21,4 +21,4 @@ home tiene que estar disponible siempre, sin abrir una terminal. Algunos proyect
 
 ## Estado
 
-Aceptada (fecha sin documentar).
+Aceptada (fecha sin documentar). Ampliada por [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md).
