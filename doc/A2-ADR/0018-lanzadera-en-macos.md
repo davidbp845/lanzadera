@@ -2,7 +2,7 @@
 
 ## Contexto
 
-La Lanzadera también tiene que funcionar en un Mac, con sus propios proyectos. No se trata de llevar allí los proyectos de otra máquina: el Mac clona el código del launcher y tiene su propio registro.
+La Lanzadera tiene que servir a cualquier persona en Linux, Windows o macOS, tanto si solo la usa como si desarrolla con el método común, y cada una con sus propios proyectos. Quien la instala clona el código del launcher y tiene su propio registro; nada de los datos de otra persona o de otra máquina viaja con él. Windows ya está cubierto ([0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md)); falta macOS.
 
 Desde [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md), procesos, RAM, carpetas y puertos salen de `psutil`, y la parada sin `cmd_detener` es `SIGTERM` al grupo de procesos fuera de Windows. Casi todo eso vale en macOS sin cambios, salvo tres piezas:
 
@@ -23,7 +23,7 @@ Desde [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md), procesos, RAM
 
   Se instala con `launchctl bootstrap gui/$(id -u) <plist>`.
 - **`stop.sh` portable.** La carpeta de cada proceso candidato sale de `psutil` con el Python del `venv/`, el mismo que usa el launcher, en lugar de `/proc`. Vale en Linux y en macOS.
-- **Contenedor y datos propios por máquina.** El Mac tiene su propio contenedor local ([0001](0001-contenedor-local-con-los-datos.md)), con `lanzadera` como submódulo y su `datos/` (`proyectos.toml`, y `enlaces.csv` y `vps.toml` si se usan). Los registros de las dos máquinas no se comparten ni se sincronizan. Los cambios de código llegan a las dos máquinas por el repo público.
+- **Contenedor y datos propios de cada persona y máquina.** Cada instalación tiene su propio contenedor local ([0001](0001-contenedor-local-con-los-datos.md)), con `lanzadera` como submódulo y su `datos/` (`proyectos.toml`, y `enlaces.csv` y `vps.toml` si se usan). Los registros no se comparten ni se sincronizan entre instalaciones. Los cambios de código llegan a todas por el repo público.
 - **Arranque delegado en el proyecto**, como en [0002](0002-arranque-y-parada-delegados-en-cada-proyecto.md): un proyecto del Mac con agente propio de `launchd` lleva en `cmd`/`cmd_detener` sus `launchctl kickstart`/`launchctl bootout`, igual que los servicios de systemd llevan `systemctl --user start|stop`.
 
 ## Alternativas descartadas
@@ -33,7 +33,7 @@ Desde [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md), procesos, RAM
 - **Recorrer siempre proceso a proceso, en los tres sistemas**: un solo camino, pero en Linux se dejaría de ver como activo un puerto de otro usuario, que hoy sale activo sin PID; y es más lento que la llamada global.
 - **Elegir el camino por sistema (`sys.platform == "darwin"`)** en lugar de por el error: añade una rama por sistema donde basta con reaccionar a `AccessDenied`.
 - **`start.command` con doble clic o como ítem de inicio de sesión**: abre una ventana de Terminal y no vuelve a arrancar el launcher si se cae, que es lo que `KeepAlive` da.
-- **Una carpeta `datos-mac/` en el contenedor de otra máquina**, como `datos-windows/`: tiene sentido cuando los dos sistemas comparten disco; el Mac es otra máquina, con sus datos y su historial propios.
+- **Una carpeta `datos-mac/` en el contenedor de otra instalación**, como `datos-windows/`: tiene sentido cuando dos sistemas de la misma persona comparten disco; otra máquina u otra persona tiene sus datos y su historial propios.
 
 ## Consecuencias
 

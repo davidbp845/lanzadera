@@ -25,4 +25,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0015](0015-tipo-de-aplicacion-en-el-registro.md) | Clave `tipo` en el registro y píldoras por tipo de aplicación (`heruka-flow` sustituye a Negocios) | Aceptada |
 | [0016](0016-latido-del-issue-en-curso.md) | Latido del issue en curso en el campo `Latido` del tablero: la pastilla In progress parpadea | Aceptada |
 | [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md) | Lanzadera en Windows: clave `proceso` para proyectos sin puerto, `psutil` en los dos sistemas, `start.cmd` desde Inicio | Aceptada |
-| [0018](0018-lanzadera-en-macos.md) | Lanzadera en macOS: puertos sin root proceso a proceso, LaunchAgent, `stop.sh` con `psutil`, contenedor propio por máquina | Propuesta |
+| [0018](0018-lanzadera-en-macos.md) | Lanzadera en macOS: puertos sin root proceso a proceso, LaunchAgent, `stop.sh` con `psutil`, contenedor propio de cada persona y máquina | Propuesta |
