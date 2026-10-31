@@ -3,6 +3,7 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
+import psutil
 import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
@@ -31,6 +32,8 @@ def modo_demo(monkeypatch):
     for nombre in ["run", "Popen", "check_output", "check_call", "call"]:
         monkeypatch.setattr(subprocess, nombre, prohibido)
     monkeypatch.setattr(socket, "socket", prohibido)
+    for nombre in ["process_iter", "net_connections", "Process", "virtual_memory"]:
+        monkeypatch.setattr(psutil, nombre, prohibido)
     st.cache_data.clear()
 
 
