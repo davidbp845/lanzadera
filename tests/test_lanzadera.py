@@ -158,8 +158,8 @@ def test_menu_sin_negocios(lanzadera):
 @pytest.fixture
 def sin_negocios(lanzadera, monkeypatch, tmp_path):
     """El registro de fixtures sin `[negocios]`: un launcher sin heruka-flow."""
-    registro = (FIXTURES / "proyectos.toml").read_text()
-    (tmp_path / "proyectos.toml").write_text(registro[: registro.index("[negocios]")])
+    registro = (FIXTURES / "proyectos.toml").read_text(encoding="utf-8")
+    (tmp_path / "proyectos.toml").write_text(registro[: registro.index("[negocios]")], encoding="utf-8")
     monkeypatch.setenv("HOME_LAUNCHER_DATOS", str(tmp_path))
     return lanzadera
 
@@ -223,9 +223,9 @@ proceso = "atajos.ahk"
 @pytest.fixture
 def con_proceso(lanzadera, monkeypatch, tmp_path):
     """El registro de fixtures con un proyecto sin puerto que se reconoce por su proceso."""
-    registro = (FIXTURES / "proyectos.toml").read_text()
+    registro = (FIXTURES / "proyectos.toml").read_text(encoding="utf-8")
     corte = registro.index("[negocios]")
-    (tmp_path / "proyectos.toml").write_text(registro[:corte] + ATAJOS + "\n" + registro[corte:])
+    (tmp_path / "proyectos.toml").write_text(registro[:corte] + ATAJOS + "\n" + registro[corte:], encoding="utf-8")
     monkeypatch.setenv("HOME_LAUNCHER_DATOS", str(tmp_path))
     con_proceso.filas = {}
     con_proceso.terminados = []

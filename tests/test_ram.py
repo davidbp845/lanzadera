@@ -275,8 +275,9 @@ def test_terminar_en_windows_para_el_arbol_y_mata_lo_que_queda(monkeypatch):
 
 def test_terminar_en_linux_manda_sigterm_al_grupo(monkeypatch):
     enviados = []
-    monkeypatch.setattr(ram.os, "getpgid", lambda pid: pid * 10)
-    monkeypatch.setattr(ram.os, "killpg", lambda grupo, senal: enviados.append((grupo, senal)))
+    # raising=False: en Windows `os` no tiene getpgid ni killpg.
+    monkeypatch.setattr(ram.os, "getpgid", lambda pid: pid * 10, raising=False)
+    monkeypatch.setattr(ram.os, "killpg", lambda grupo, senal: enviados.append((grupo, senal)), raising=False)
     ram.terminar(701, windows=False)
     assert enviados == [(7010, ram.signal.SIGTERM)]
 
