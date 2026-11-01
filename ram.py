@@ -1,8 +1,12 @@
-"""RAM real (RSS) de cada proyecto activo del registro, como la calcula `/uso-ram`, con `psutil` (ADR-0017)."""
+"""RAM real (RSS) de cada proyecto activo del registro, como la calcula `/uso-ram`, con `psutil` (ADR-0017).
+
+Y su memoria de GPU (VRAM), con `nvidia-smi` si lo hay: `psutil` no la expone.
+"""
 
 import os
 import re
 import signal
+import subprocess
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -27,6 +31,46 @@ def leer_procesos() -> Filas:
             " ".join(info["cmdline"] or []),
         )
     return filas
+
+
+def _nvidia_smi(consulta: str) -> list[list[str]] | None:
+    try:
+        resultado = subprocess.run(
+            ["nvidia-smi", consulta, "--format=csv,noheader,nounits"],
+            capture_output=True,
+            encoding="utf-8",
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if resultado.returncode != 0:
+        return None
+    return [[campo.strip() for campo in linea.split(",")] for linea in resultado.stdout.splitlines() if linea.strip()]
+
+
+def leer_gpu(nvidia_smi: Callable[[str], list[list[str]] | None] = _nvidia_smi) -> dict | None:
+    """`{"total_kb", "por_pid": {pid: kb}}` de las GPU NVIDIA, o None si no hay `nvidia-smi` o no da la VRAM por proceso.
+
+    En Windows con el driver en modo WDDM la memoria por proceso sale `[N/A]`: sin ella no hay
+    nada que repartir entre proyectos, así que cuenta como sin GPU.
+    """
+    totales = nvidia_smi("--query-gpu=memory.total")
+    procesos = nvidia_smi("--query-compute-apps=pid,used_memory")
+    if not totales or procesos is None:
+        return None
+    try:
+        total_kb = sum(int(fila[0]) for fila in totales) * 1024
+    except (ValueError, IndexError):
+        return None
+    por_pid: dict[int, int] = {}
+    for fila in procesos:
+        if len(fila) == 2 and fila[0].isdigit() and fila[1].isdigit():
+            # Un proceso en dos GPU sale dos veces.
+            por_pid[int(fila[0])] = por_pid.get(int(fila[0]), 0) + int(fila[1]) * 1024
+    if procesos and not por_pid:
+        return None
+    return {"total_kb": total_kb, "por_pid": por_pid}
 
 
 def descendientes(raiz: int, filas: Filas) -> set[int]:
@@ -223,22 +267,30 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
     }
 
 
-def medir(proyectos: list[dict], filas: Filas, puertos: dict[int, int | None], cwd_de=_cwd) -> dict:
-    """`{"proyectos": [...], "compartidos": [(nombre, nombre)]}`, de mayor a menor consumo.
+def medir(
+    proyectos: list[dict], filas: Filas, puertos: dict[int, int | None], cwd_de=_cwd, gpu: dict | None = None
+) -> dict:
+    """`{"proyectos": [...], "compartidos": [(nombre, nombre)], "vram_total_kb"}`, de mayor a menor consumo.
 
     `puertos` es la salida de `puertos_de`. Solo cuenta los proyectos con algo escuchando
     en su puerto principal (o, si no tienen, en el de algún enlace) o, sin puerto, con un
     proceso que lleve su `proceso`; los de otro usuario
     van al final con `kb` None. `compartidos`
     lista los pares con PIDs en común: si no está vacío, se ha contado RAM dos veces.
+    Con `gpu` (de `leer_gpu`), cada proyecto lleva su `vram_kb`, la de sus mismos PIDs;
+    sin GPU, `vram_kb` y `vram_total_kb` son None.
     """
     medidos = [m for p in proyectos if (m := _medir_proyecto(p, filas, puertos, cwd_de))]
+    for m in medidos:
+        visible = gpu is not None and m["kb"] is not None
+        m["vram_kb"] = sum(gpu["por_pid"].get(pid, 0) for pid in m["pids"]) if visible else None
     compartidos = [
         (a["nombre"], b["nombre"]) for i, a in enumerate(medidos) for b in medidos[i + 1 :] if a["pids"] & b["pids"]
     ]
     return {
         "proyectos": sorted(medidos, key=lambda m: -1 if m["kb"] is None else m["kb"], reverse=True),
         "compartidos": compartidos,
+        "vram_total_kb": gpu["total_kb"] if gpu else None,
     }
 
 
@@ -277,12 +329,13 @@ def fila_heruka_flow(
 
 
 def consultar(proyectos: list[dict]) -> dict:
-    """Lee procesos y puertos una vez y mide: `{"medicion", "hora", "error"}`; `error` es None si fue bien."""
+    """Lee procesos, puertos y GPU una vez y mide: `{"medicion", "hora", "error"}`; `error` es None si fue bien."""
     try:
         filas = leer_procesos()
     except (psutil.Error, OSError) as e:
         return {"medicion": None, "hora": datetime.now(), "error": str(e)}
-    return {"medicion": medir(proyectos, filas, puertos_en_escucha()), "hora": datetime.now(), "error": None}
+    medicion = medir(proyectos, filas, puertos_en_escucha(), gpu=leer_gpu())
+    return {"medicion": medicion, "hora": datetime.now(), "error": None}
 
 
 def formatear(kb: int) -> str:

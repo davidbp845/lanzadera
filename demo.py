@@ -1,6 +1,6 @@
 """Datos de ejemplo del modo demo (ADR-0010).
 
-Sustituyen a todo lo que el launcher consulta del sistema (puertos, `ps`/`ss`, `gh`,
+Sustituyen a todo lo que el launcher consulta del sistema (puertos, `psutil`, `nvidia-smi`, `gh`,
 `git log`, `dev_up.sh --listar`, SSH al VPS): en la demo no se ejecuta nada.
 """
 
@@ -55,7 +55,7 @@ def recuento(owner: str, numero: int) -> dict | None:
 
 
 def ram(proyectos: list[dict]) -> dict:
-    """La misma forma que `ram.consultar`, con la RAM de `[ram]` de los proyectos activos."""
+    """La misma forma que `ram.consultar`, con la RAM de `[ram]` y la VRAM de `[vram]` de los proyectos activos."""
     medidos = []
     for proyecto in proyectos:
         servicios = _estado()["ram"].get(proyecto["slug"])
@@ -73,10 +73,12 @@ def ram(proyectos: list[dict]) -> dict:
                 "pids": set(),
                 "kb": sum(kb for *_resto, kb in desglose),
                 "desglose": desglose if len(desglose) > 1 else [],
+                "vram_kb": _estado()["vram"].get(proyecto["slug"], 0) * 1024,
             }
         )
     medidos.sort(key=lambda m: m["kb"], reverse=True)
-    return {"medicion": {"proyectos": medidos, "compartidos": []}, "hora": datetime.now(), "error": None}
+    medicion = {"proyectos": medidos, "compartidos": [], "vram_total_kb": _estado()["memoria_gpu_gb"] * 1024 * 1024}
+    return {"medicion": medicion, "hora": datetime.now(), "error": None}
 
 
 def consultar_vps(_host: str) -> dict:

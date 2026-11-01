@@ -151,12 +151,22 @@ def test_formatear(kb, texto):
     assert ram.formatear(kb) == texto
 
 
-def test_pagina_local_mide_al_entrar_y_al_recalcular(monkeypatch, proyectos):
+# Multi tiene su API (310) y un hijo de su UI (302) en la GPU; el 999 no es de ningún proyecto.
+GPU = {"total_kb": 8 * 1024 * 1024, "por_pid": {310: 300 * 1024, 302: 60 * 1024, 999: 1024}}
+
+
+@pytest.mark.parametrize(
+    "gpu, vram",
+    [(None, None), (GPU, ["360 MB", "", "", "360 MB"])],
+    ids=["sin-gpu", "con-gpu"],
+)
+def test_pagina_local_mide_al_entrar_y_al_recalcular(monkeypatch, proyectos, gpu, vram):
     llamadas = []
 
     def consultar(proyectos_registro):
         llamadas.append(len(proyectos_registro))
-        return {"medicion": _medir(proyectos), "hora": datetime.now(), "error": None}
+        medicion = ram.medir(proyectos, _filas(PS), PUERTOS, CWD.get, gpu=gpu)
+        return {"medicion": medicion, "hora": datetime.now(), "error": None}
 
     monkeypatch.setenv("HOME_LAUNCHER_DATOS", str(FIXTURES))
     monkeypatch.setattr(ram, "consultar", consultar)
@@ -167,6 +177,7 @@ def test_pagina_local_mide_al_entrar_y_al_recalcular(monkeypatch, proyectos):
     tabla = at.dataframe[0].value
     assert list(tabla["Proyecto"]) == ["Multi", "Simple", "Esta app", "Total"]
     assert tabla["RAM"].iloc[-1] == ram.formatear(712000 + 81000 + 50000)
+    assert (list(tabla["VRAM"]) if "VRAM" in tabla else None) == vram
     assert len(at.expander) == 1
     at.run()
     # Los tres [[proyecto]] del fixture más [negocios.single].
@@ -291,3 +302,54 @@ def test_memoria_total_de_la_maquina(monkeypatch):
 
     monkeypatch.setattr(psutil, "virtual_memory", falla)
     assert ram.memoria_total_kb() is None
+
+
+def _salidas(totales, procesos):
+    return lambda consulta: totales if consulta == "--query-gpu=memory.total" else procesos
+
+
+@pytest.mark.parametrize(
+    "totales, procesos, esperado",
+    [
+        # Un proceso en las dos GPU suma lo de las dos.
+        (
+            [["4096"], ["4096"]],
+            [["36611", "3004"], ["36611", "100"], ["400", "12"]],
+            {"total_kb": 8192 * 1024, "por_pid": {36611: 3104 * 1024, 400: 12 * 1024}},
+        ),
+        ([["4096"]], [], {"total_kb": 4096 * 1024, "por_pid": {}}),
+        # Windows en modo WDDM: sin memoria por proceso no hay nada que repartir.
+        ([["4096"]], [["36611", "[N/A]"]], None),
+        # Sin nvidia-smi, o falla.
+        (None, None, None),
+    ],
+    ids=["dos-gpu", "sin-procesos", "wddm", "sin-nvidia-smi"],
+)
+def test_leer_gpu(totales, procesos, esperado):
+    assert ram.leer_gpu(_salidas(totales, procesos)) == esperado
+
+
+def test_sin_nvidia_smi_no_hay_gpu(monkeypatch):
+    def no_existe(*_args, **_kwargs):
+        raise FileNotFoundError
+
+    monkeypatch.setattr(ram.subprocess, "run", no_existe)
+    assert ram.leer_gpu() is None
+
+
+def test_vram_por_proyecto_con_sus_mismos_pids(proyectos):
+    medicion = ram.medir(proyectos, _filas(PS), PUERTOS, CWD.get, gpu=GPU)
+    assert {m["nombre"]: m["vram_kb"] for m in medicion["proyectos"]} == {
+        "Multi": 360 * 1024,
+        "Simple": 0,
+        "Esta app": 0,
+    }
+    assert medicion["vram_total_kb"] == GPU["total_kb"]
+    sin_gpu = _medir(proyectos)
+    assert sin_gpu["vram_total_kb"] is None
+    assert {m["vram_kb"] for m in sin_gpu["proyectos"]} == {None}
+
+
+def test_activo_de_otro_usuario_sin_vram(proyectos):
+    medicion = ram.medir(proyectos, _filas(PS), {**PUERTOS, 9502: None}, CWD.get, gpu=GPU)
+    assert _por_nombre(medicion)["Simple"]["vram_kb"] is None

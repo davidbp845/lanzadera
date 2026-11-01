@@ -1176,6 +1176,21 @@ def render_local() -> None:
             t("local.total_detalle", total=_ram(maquina)) if maquina else "",
             total / maquina * 100 if maquina else None,
         ),
+    ]
+    # Sin GPU NVIDIA no hay VRAM: ni indicador ni columna. No entra en la barra apilada
+    # ni en el total de RAM porque es otra memoria.
+    gpu_kb = medicion["vram_total_kb"]
+    total_vram = sum(m["vram_kb"] or 0 for m in visibles) if gpu_kb else 0
+    if gpu_kb:
+        tarjetas.append(
+            graficos.tarjeta(
+                t("local.vram"),
+                _ram(total_vram),
+                t("local.vram_detalle", total=_ram(gpu_kb)),
+                total_vram / gpu_kb * 100,
+            )
+        )
+    tarjetas += [
         graficos.tarjeta(
             t("local.activos"),
             t("local.activos_valor", n=len(medicion["proyectos"]), total=len(medibles)),
@@ -1212,10 +1227,18 @@ def render_local() -> None:
                 t("col.proyecto"): m["nombre"],
                 t("col.puerto"): "" if m["puerto"] is None else str(m["puerto"]),
                 t("col.ram"): t("local.no_visible") if m["kb"] is None else _ram(m["kb"]),
+                **({t("col.vram"): _ram(m["vram_kb"]) if m["vram_kb"] else ""} if gpu_kb else {}),
             }
             for m in medicion["proyectos"]
         ]
-        filas.append({t("col.proyecto"): t("local.total_fila"), t("col.puerto"): "", t("col.ram"): _ram(total)})
+        filas.append(
+            {
+                t("col.proyecto"): t("local.total_fila"),
+                t("col.puerto"): "",
+                t("col.ram"): _ram(total),
+                **({t("col.vram"): _ram(total_vram)} if gpu_kb else {}),
+            }
+        )
         st.dataframe(pd.DataFrame(filas), hide_index=True, width="stretch")
 
         for m in medicion["proyectos"]:

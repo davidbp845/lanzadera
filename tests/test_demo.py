@@ -104,8 +104,11 @@ def test_modo_demo_e_idioma_por_entorno(monkeypatch, entorno, demo_activa, idiom
 
 def test_la_ram_de_la_demo_solo_cuenta_los_activos():
     proyectos = [{"nombre": "A", "slug": "notes", "puerto": 8510}, {"nombre": "B", "slug": "contacts", "puerto": 8530}]
-    medidos = demo.ram(proyectos)["medicion"]["proyectos"]
-    assert [(m["nombre"], m["kb"], len(m["desglose"])) for m in medidos] == [("A", 310 * 1024, 2)]
+    medicion = demo.ram(proyectos)["medicion"]
+    assert [(m["nombre"], m["kb"], len(m["desglose"]), m["vram_kb"]) for m in medicion["proyectos"]] == [
+        ("A", 310 * 1024, 2, 362 * 1024)
+    ]
+    assert medicion["vram_total_kb"] == 8 * 1024 * 1024
 
 
 # Salida real de estado_vps.sh y la de la demo, que usa "load" en vez de "carga".

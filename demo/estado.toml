@@ -1,11 +1,12 @@
 # Estado ficticio de la demo pública (ADR-0010): lo que fuera de la demo sale de los
-# puertos, `ps`/`ss`, `gh`, `git log`, `dev_up.sh --listar` y /proc/meminfo.
+# puertos, `psutil`, `nvidia-smi`, `gh`, `git log` y `dev_up.sh --listar`.
 
 # Puertos en escucha.
 activos = [8501, 8510, 8511, 8520, 8540, 8541, 8570, 3100, 3101, 8000]
 
-# RAM total de la máquina, en GB.
+# RAM total de la máquina y memoria de la GPU, en GB.
 memoria_total_gb = 16
+memoria_gpu_gb = 8
 
 # Lo que devolvería `dev_up.sh --listar` en el proyecto de negocios.
 negocios = [
@@ -61,6 +62,11 @@ negocios = [
   { etiqueta = "acme · API", puerto = 8000, mb = 95 },
   { etiqueta = "shared backend", mb = 612 },
 ]
+
+# VRAM (MB) de los proyectos activos que usan la GPU, como la daría `nvidia-smi`.
+[vram]
+notes = 362
+budget = 1480
 
 # ADR de cada proyecto (por slug), como las leería `adrs.py` de su `doc/A2-ADR/` (ADR-0020):
 # `estado`, uno de Propuesta · Aceptada · Superada · Rechazada; `issues`, los que cita su
