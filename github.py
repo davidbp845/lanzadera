@@ -134,3 +134,18 @@ def recuento(owner: str, numero: int) -> dict | None:
         if not items["pageInfo"]["hasNextPage"]:
             return {**contar(nodos), "en_curso": en_curso(nodos, datetime.now(UTC))}
         cursor = items["pageInfo"]["endCursor"]
+
+
+def issues_abiertos(repo: str) -> dict[int, bool] | None:
+    """`{número: abierto}` de todos los issues del repo `owner/repo`; None si `gh` falla."""
+    try:
+        resultado = subprocess.run(
+            ["gh", "issue", "list", "-R", repo, "--state", "all", "--limit", "2000", "--json", "number,state"],
+            capture_output=True,
+            encoding="utf-8",
+            timeout=15,
+            check=False,
+        )
+        return {i["number"]: i["state"] == "OPEN" for i in json.loads(resultado.stdout)}
+    except (OSError, subprocess.TimeoutExpired, ValueError, KeyError, TypeError):
+        return None

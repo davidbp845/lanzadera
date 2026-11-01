@@ -61,3 +61,41 @@ negocios = [
   { etiqueta = "acme · API", puerto = 8000, mb = 95 },
   { etiqueta = "shared backend", mb = 612 },
 ]
+
+# ADR de cada proyecto (por slug), como las leería `adrs.py` de su `doc/A2-ADR/` (ADR-0020):
+# `estado`, uno de Propuesta · Aceptada · Superada · Rechazada; `issues`, los que cita su
+# sección Estado, con si siguen abiertos en GitHub.
+[adr.launchpad]
+adrs = [
+  { numero = "0002", fichero = "0002-arranque-y-parada-delegados-en-cada-proyecto.md", titulo = "Start and stop delegated to each project's script or service", estado = "Aceptada", issues = [] },
+  { numero = "0003", fichero = "0003-el-puerto-como-fuente-de-verdad.md", titulo = "The port as the source of truth for the status", estado = "Aceptada", issues = [] },
+  { numero = "0010", fichero = "0010-demo-publica-de-solo-lectura.md", titulo = "Read-only public demo with sample data", estado = "Aceptada", issues = [] },
+  { numero = "0016", fichero = "0016-latido-del-issue-en-curso.md", titulo = "Heartbeat of the issue in progress in a board field", estado = "Aceptada", issues = [{ n = 3, abierto = false }] },
+  { numero = "0018", fichero = "0018-lanzadera-en-macos.md", titulo = "Launchpad on macOS", estado = "Propuesta", issues = [] },
+  { numero = "0020", fichero = "0020-pagina-adr-estado-de-las-decisiones.md", titulo = "ADR page: decision status read from each project's doc/A2-ADR/", estado = "Aceptada", issues = [{ n = 11, abierto = true }] },
+]
+[adr.notes]
+adrs = [
+  { numero = "0001", fichero = "0001-markdown-vault.md", titulo = "Plain Markdown vault as the only storage", estado = "Aceptada", issues = [] },
+  { numero = "0002", fichero = "0002-telegram-bot.md", titulo = "Telegram bot to capture notes on the go", estado = "Aceptada", issues = [{ n = 14, abierto = false }] },
+  { numero = "0003", fichero = "0003-full-text-search.md", titulo = "Full-text search with SQLite FTS5", estado = "Propuesta", issues = [{ n = 21, abierto = false }] },
+]
+[adr.budget]
+adrs = [
+  { numero = "0001", fichero = "0001-csv-storage.md", titulo = "CSV files as storage", estado = "Aceptada", issues = [] },
+  { numero = "0002", fichero = "0002-rules-first.md", titulo = "Classification: rules first, AI second, the user confirms", estado = "Aceptada", issues = [{ n = 7, abierto = false }] },
+  { numero = "0003", fichero = "0003-yearly-rules.md", titulo = "Rules valid per year", estado = "Aceptada", issues = [{ n = 15, abierto = true }] },
+  { numero = "0004", fichero = "0004-bank-api.md", titulo = "Import straight from the bank's API", estado = "Rechazada", issues = [] },
+]
+[adr.contacts]
+adrs = [
+  { numero = "0001", fichero = "0001-wide-csv.md", titulo = "Wide CSV for the merged contacts", estado = "Aceptada", issues = [] },
+  { numero = "0002", fichero = "0002-sync-on-demand.md", titulo = "Sync only on demand", estado = "Superada", issues = [] },
+  { numero = "0003", fichero = "0003-phone-export.md", titulo = "Batch export to the phone, confirmed by hand", estado = "Aceptada", issues = [{ n = 52, abierto = false }, { n = 53, abierto = false }] },
+]
+[adr.mail]
+adrs = [
+  { numero = "0001", fichero = "0001-imap.md", titulo = "Direct IMAP access", estado = "Aceptada", issues = [] },
+  { numero = "0002", fichero = "0002-reversible-actions.md", titulo = "Only reversible actions, proposed and approved", estado = "Aceptada", issues = [] },
+  { numero = "0003", fichero = "0003-archive.md", titulo = "Archive what's resolved into the year's folder", estado = "Propuesta", issues = [{ n = 32, abierto = true }] },
+]

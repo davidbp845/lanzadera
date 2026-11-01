@@ -12,6 +12,7 @@ import pandas as pd
 import streamlit as st
 
 import actividad
+import adrs
 import demo
 import github
 import graficos
@@ -24,7 +25,7 @@ from config.proyectos import cargar as cargar_registro
 from config.proyectos import url_enlace
 from config.vps import cargar as cargar_servidores
 
-MENU = ["Lanzadera", "Enlaces", "VPS", "Local"]
+MENU = ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
 # Demo pública de solo lectura (ADR-0010): nada de lo que consulta el sistema se ejecuta;
 # cada función que lo haría devuelve los datos de demo.py.
 DEMO = paths.demo()
@@ -1238,6 +1239,163 @@ def render_local() -> None:
                 )
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def _adrs_por_carpeta() -> list[tuple[list[str], dict]]:
+    """`(nombres, proyecto)` por carpeta de ADR: las filas que comparten carpeta cuentan una vez."""
+    nombres_y_rutas = [(p["nombre"], p["path"]) for p in PROYECTOS]
+    if CON_NEGOCIOS:
+        nombres_y_rutas.append((HERUKA_LIFE_SINGLE["nombre"], HERUKA_FLOW))
+    por_carpeta: dict[str, tuple[list[str], dict]] = {}
+    for nombre, ruta in nombres_y_rutas:
+        proyecto = demo.adrs(SLUG_POR_RUTA.get(str(ruta), "")) if DEMO else adrs.del_proyecto(Path(ruta))
+        if proyecto:
+            por_carpeta.setdefault(proyecto["carpeta"], ([], proyecto))[0].append(nombre)
+    return sorted(por_carpeta.values(), key=lambda grupo: -len(grupo[1]["adrs"]))
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def _issues_abiertos_en_cache(repos: tuple[str, ...]) -> dict[str, dict[int, bool] | None]:
+    # Una consulta por repo, todas a la vez, como los recuentos de los tableros.
+    consultar = demo.issues_abiertos if DEMO else github.issues_abiertos
+    with ThreadPoolExecutor() as hilos:
+        return dict(zip(repos, hilos.map(consultar, repos), strict=True))
+
+
+def _issues_abiertos(repos: tuple[str, ...]) -> dict[str, dict[int, bool] | None]:
+    estados = _issues_abiertos_en_cache(repos)
+    # Un fallo de `gh` no se guarda: el siguiente rerun vuelve a consultar.
+    if None in estados.values():
+        _issues_abiertos_en_cache.clear(repos)
+    return estados
+
+
+def _actualizar_adrs() -> None:
+    _adrs_por_carpeta.clear()
+    _issues_abiertos_en_cache.clear()
+
+
+def _filas_adr(proyecto: dict, estados: dict[str, dict[int, bool] | None]) -> list[dict]:
+    """Las ADR del proyecto con el estado de cada issue (None si no se sabe) y su implementación."""
+    filas = []
+    for adr in proyecto["adrs"]:
+        issues = [
+            {
+                "ref": f"#{n}" if repo == proyecto["repo"] else f"{repo}#{n}",
+                "url": f"https://github.com/{repo}/issues/{n}",
+                "abierto": (estados.get(repo) or {}).get(n),
+            }
+            for repo, n in adr["issues"]
+        ]
+        abiertos = [i["abierto"] for i in issues]
+        filas.append(
+            {
+                **adr,
+                "issues": issues,
+                "implementacion": adrs.implementacion(abiertos),
+                "revisar": adrs.para_revisar(adr["estado"], abiertos),
+            }
+        )
+    return filas
+
+
+def _nombre_estado(estado: str | None) -> str:
+    return t(f"adr.estado.{estado}" if estado else "adr.estado.sin")
+
+
+def render_adr() -> None:
+    st.title(t("pagina.ADR"))
+    _aviso_demo()
+    grupos = _adrs_por_carpeta()
+    if not grupos:
+        st.info(t("adr.vacio"))
+        return
+
+    repos = tuple(sorted({repo for _n, p in grupos for a in p["adrs"] for repo, _numero in a["issues"]}))
+    estados = _issues_abiertos(repos)
+    filas = {p["carpeta"]: _filas_adr(p, estados) for _n, p in grupos}
+    total = sum(len(f) for f in filas.values())
+
+    col_resumen, col_boton = st.columns([4, 1], vertical_alignment="center")
+    with col_resumen:
+        st.caption(t("adr.resumen", n=total, proyectos=len(grupos)))
+    with col_boton, st.container(horizontal=True, horizontal_alignment="right"):
+        st.button(t("adr.actualizar"), icon=":material/refresh:", key="actualizar_adr", on_click=_actualizar_adrs)
+
+    claves = adrs.ESTADOS + ([None] if any(f["estado"] is None for fs in filas.values() for f in fs) else [])
+    nombres = [_nombre_estado(e) for e in claves]
+    colores = graficos.COLORES_ADR[: len(adrs.ESTADOS)] + [graficos.GRIS] * (len(claves) - len(adrs.ESTADOS))
+    recuentos = [
+        (
+            nombres_grupo,
+            {_nombre_estado(e): sum(f["estado"] == e for f in filas[p["carpeta"]]) for e in claves},
+        )
+        for nombres_grupo, p in grupos
+    ]
+    revisar = [
+        (graficos.etiqueta_tablero(nombres_grupo), f["numero"], f["titulo"], t("adr.aviso_propuesta"))
+        for nombres_grupo, p in grupos
+        for f in filas[p["carpeta"]]
+        if f["revisar"]
+    ]
+    todas = [f for fs in filas.values() for f in fs]
+    propuestas = sum(f["estado"] == "Propuesta" for f in todas)
+    en_curso = sum(f["estado"] == "Aceptada" and f["implementacion"] == "en_curso" for f in todas)
+
+    col_grafico, col_revisar = st.columns(2)
+    with col_grafico, st.container(border=True, height="stretch"):
+        _titulo_tarjeta(t("adr.grafico"))
+        st.caption(t("adr.grafico_sub"))
+        st.html(graficos.leyenda(nombres, colores))
+        ejes = {"proyecto": t("eje.proyecto"), "estado": t("eje.estado")}
+        st.altair_chart(graficos.por_estado(recuentos, nombres, colores, ejes, t("eje.adr")), width="stretch")
+    with col_revisar, st.container(border=True, height="stretch"):
+        _titulo_tarjeta(t("adr.revisar"))
+        st.caption(t("adr.revisar_sub"))
+        if revisar:
+            st.html(graficos.revisar_adr(revisar))
+        else:
+            st.markdown(t("adr.revisar_nada"))
+        st.caption(t("adr.cuentas", propuestas=propuestas, en_curso=en_curso))
+
+    opciones = {p["carpeta"]: (nombres_grupo, p) for nombres_grupo, p in grupos}
+    elegido = st.selectbox(
+        t("adr.proyecto"),
+        list(opciones),
+        format_func=lambda c: f"{' · '.join(opciones[c][0])} ({len(opciones[c][1]['adrs'])})",
+        key="adr_proyecto",
+        width=420,
+    )
+    proyecto = opciones[elegido][1]
+    textos_tabla = {
+        "adr": t("adr.col.adr"),
+        "decision": t("adr.col.decision"),
+        "estado": t("adr.col.estado"),
+        "implementacion": t("adr.col.implementacion"),
+        "issues": t("adr.col.issues"),
+        "abierto": t("adr.issue.abierto"),
+        "cerrado": t("adr.issue.cerrado"),
+    }
+    st.html(
+        graficos.tabla_adr(
+            [
+                {
+                    "numero": f["numero"],
+                    "url": f"{proyecto['url_carpeta']}/{f['fichero']}" if proyecto["url_carpeta"] else None,
+                    "titulo": f["titulo"],
+                    "estado": _nombre_estado(f["estado"]),
+                    "color": graficos.COLORES_ADR[adrs.ESTADOS.index(f["estado"])] if f["estado"] else graficos.GRIS,
+                    "implementacion": t(f"adr.impl.{f['implementacion']}") if f["implementacion"] else "—",
+                    "aviso": t("adr.aviso_propuesta") if f["revisar"] else "",
+                    "issues": f["issues"],
+                }
+                for f in filas[elegido]
+            ],
+            textos_tabla,
+        )
+    )
+    st.caption(t("adr.leyenda_issues"))
+
+
 with st.sidebar:
     pagina = st.radio(t("menu"), MENU, key="pagina", format_func=lambda p: t(f"pagina.{p}"))
     st.segmented_control(
@@ -1253,6 +1411,8 @@ with st.sidebar:
 
 if pagina == "Lanzadera":
     render_proyectos()
+elif pagina == "ADR":
+    render_adr()
 elif pagina == "Enlaces":
     render_enlaces()
 elif pagina == "VPS":

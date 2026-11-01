@@ -99,3 +99,35 @@ def actividad(desde: date, hasta: date) -> dict[date, int]:
         commits[dia] = 0 if fin_de_semana and azar.random() < 0.6 else azar.choice([0, 0, 0, 1, 1, 2, 3, 5, 8, 13])
         dia += timedelta(days=1)
     return commits
+
+
+def adrs(slug: str) -> dict | None:
+    """La misma forma que `adrs.del_proyecto`, con las ADR de `[adr]`; el repo, el de `[github]`."""
+    entrada = _estado()["adr"].get(slug)
+    if not entrada:
+        return None
+    url, _tablero = repositorio_y_tablero(slug)
+    repo = url.removeprefix("https://github.com/") if url else None
+    return {
+        "carpeta": slug,
+        "repo": repo,
+        "url_carpeta": f"{url}/blob/HEAD/doc/A2-ADR" if url else None,
+        "adrs": [
+            {
+                "numero": a["numero"],
+                "titulo": a["titulo"],
+                "fichero": a["fichero"],
+                "estado": a["estado"],
+                "issues": [(repo, i["n"]) for i in a["issues"]],
+            }
+            for a in entrada["adrs"]
+        ],
+    }
+
+
+def issues_abiertos(repo: str) -> dict[int, bool] | None:
+    """La misma forma que `github.issues_abiertos`, con los issues que citan las ADR de ese repo."""
+    for slug in _estado()["adr"]:
+        if (proyecto := adrs(slug)) and proyecto["repo"] == repo:
+            return {i["n"]: i["abierto"] for a in _estado()["adr"][slug]["adrs"] for i in a["issues"]}
+    return None

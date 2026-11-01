@@ -62,12 +62,22 @@ def etiqueta_tablero(nombres: list[str], maximo: int = LARGO_ETIQUETA) -> str:
 
 
 def issues_por_estado(recuentos: list[tuple[list[str], dict[str, int]]], ejes: dict[str, str]) -> alt.Chart:
-    """Barra apilada por tablero con sus items abiertos (sin Done), de más a menos.
+    """Barra apilada por tablero con sus items abiertos (sin Done), de más a menos."""
+    return por_estado(recuentos, github.ESTADOS[:4], COLORES_ESTADO[:4], ejes, ejes["issues"])
 
-    Cada tablero llega con los nombres de sus proyectos: la etiqueta los resume si no caben
-    y el tooltip los da completos.
+
+def por_estado(
+    recuentos: list[tuple[list[str], dict[str, int]]],
+    abiertos: list[str],
+    colores: list[str],
+    ejes: dict[str, str],
+    titulo_n: str,
+) -> alt.Chart:
+    """Barra apilada por grupo de proyectos, un tramo por estado de `abiertos`, de más a menos.
+
+    Cada grupo (un tablero, una carpeta de ADR) llega con los nombres de sus proyectos: la
+    etiqueta los resume si no caben y el tooltip los da completos.
     """
-    abiertos = github.ESTADOS[:4]
     filas = [
         {
             "proyecto": etiqueta_tablero(nombres),
@@ -93,7 +103,7 @@ def issues_por_estado(recuentos: list[tuple[list[str], dict[str, int]]], ejes: d
             y=y,
             color=alt.Color(
                 "estado:N",
-                scale=alt.Scale(domain=abiertos, range=COLORES_ESTADO[:4]),
+                scale=alt.Scale(domain=abiertos, range=colores),
                 # La leyenda va aparte, en HTML (leyenda()): la de Vega se centra sobre el área del
                 # gráfico y, con etiquetas largas en el eje, se sale de la tarjeta.
                 legend=None,
@@ -102,7 +112,7 @@ def issues_por_estado(recuentos: list[tuple[list[str], dict[str, int]]], ejes: d
             tooltip=[
                 alt.Tooltip("proyectos:N", title=ejes["proyecto"]),
                 alt.Tooltip("estado:N", title=ejes["estado"]),
-                alt.Tooltip("n:Q", title=ejes["issues"]),
+                alt.Tooltip("n:Q", title=titulo_n),
             ],
         )
     )
@@ -261,4 +271,92 @@ def puertos(estado: list[tuple[int, str, bool]]) -> str:
             for puerto, nombre, activo in sorted(estado)
         )
         + "</div>"
+    )
+
+
+# Estados de una ADR (adrs.ESTADOS): huecos de la misma paleta, sin el aqua, que aquí marca
+# los issues abiertos. Sin clasificar, en gris.
+COLORES_ADR = ["#eb6834", "#2a78d6", "#e87ba4", "#eda100"]
+GRIS = "#8a8a8a"
+ABIERTO = "#1baf7a"
+
+
+def _pildora(texto: str, color: str) -> str:
+    # Texto oscuro sobre el color aclarado, como las pastillas del tablero.
+    return (
+        f'<span style="display:inline-block;padding:1px 10px;border-radius:999px;background:{color}4d;'
+        f'color:#31333F;font-size:0.8rem;font-weight:600;white-space:nowrap">{html.escape(texto)}</span>'
+    )
+
+
+def _issue(issue: dict, titulos: dict[str, str]) -> str:
+    """Enlace a un issue con un punto: relleno si está abierto, hueco si cerrado; sin punto si no se sabe."""
+    abierto = issue["abierto"]
+    punto = (
+        ""
+        if abierto is None
+        else f'<span style="width:8px;height:8px;border-radius:50%;display:inline-block;'
+        f'background:{ABIERTO if abierto else "#ffffff"};border:1px solid {ABIERTO if abierto else TEXTO_SUAVE}"></span>'
+    )
+    titulo = "" if abierto is None else titulos["abierto" if abierto else "cerrado"]
+    return (
+        f'<a href="{html.escape(issue["url"])}" target="_blank" title="{html.escape(titulo)}" '
+        'style="display:inline-flex;align-items:center;gap:5px;font-size:0.85rem;text-decoration:none;'
+        "border:1px solid rgba(49,51,63,0.15);border-radius:999px;padding:0 9px 0 7px;color:#31333F;"
+        f'white-space:nowrap">{punto}{html.escape(issue["ref"])}</a>'
+    )
+
+
+def tabla_adr(filas: list[dict], textos: dict[str, str]) -> str:
+    """Tabla de las ADR de un proyecto: número (enlace al fichero), decisión, estado, implementación e issues.
+
+    Cada fila: `numero`, `url`, `titulo`, `estado` (texto ya traducido), `color`, `implementacion`,
+    `aviso` e `issues` (`ref`, `url`, `abierto`). `textos` da las cabeceras y los tooltips.
+    """
+    celda = "padding:8px 12px;vertical-align:top"
+    cabecera = "".join(
+        f'<th scope="col" style="{celda};font-weight:600;text-align:left">{html.escape(textos[c])}</th>'
+        for c in ("adr", "decision", "estado", "implementacion", "issues")
+    )
+    cuerpo = []
+    for f in filas:
+        numero = html.escape(f["numero"])
+        if f["url"]:
+            numero = f'<a href="{html.escape(f["url"])}" target="_blank">{numero}</a>'
+        aviso = f'<div style="color:#8a420b;font-size:0.85rem">⚠ {html.escape(f["aviso"])}</div>' if f["aviso"] else ""
+        issues = "".join(_issue(i, textos) for i in f["issues"]) or f'<span style="color:{TEXTO_SUAVE}">—</span>'
+        cuerpo.append(
+            '<tr style="border-top:1px solid rgba(49,51,63,0.1)">'
+            f"<td style=\"{celda};font-family:'Source Code Pro',monospace;font-size:0.85rem\">{numero}</td>"
+            f'<td style="{celda}">{html.escape(f["titulo"])}{aviso}</td>'
+            f'<td style="{celda}">{_pildora(f["estado"], f["color"])}</td>'
+            f'<td style="{celda};white-space:nowrap">{html.escape(f["implementacion"])}</td>'
+            f'<td style="{celda}"><div style="display:flex;flex-wrap:wrap;gap:4px">{issues}</div></td>'
+            "</tr>"
+        )
+    return (
+        '<div style="overflow-x:auto;border:1px solid rgba(49,51,63,0.15);border-radius:0.5rem">'
+        '<table style="width:100%;min-width:640px;border-collapse:collapse;font-size:0.9rem">'
+        f'<thead><tr style="background:#F7F8FA;color:{TEXTO_SUAVE};font-size:0.85rem">{cabecera}</tr></thead>'
+        f"<tbody>{''.join(cuerpo)}</tbody></table></div>"
+    )
+
+
+def revisar_adr(avisos: list[tuple[str, str, str, str]]) -> str:
+    """Lista de `(proyecto, número, decisión, motivo)` de las ADR cuyo estado no cuadra con sus issues."""
+    icono = (
+        '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b5570f" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px">'
+        '<path d="M12 3 2 21h20L12 3z"></path><path d="M12 10v5"></path><path d="M12 18h.01"></path></svg>'
+    )
+    return (
+        '<ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px">'
+        + "".join(
+            f'<li style="display:flex;gap:8px;font-size:0.9rem;line-height:1.4">{icono}<span>'
+            f'<strong style="font-weight:600">{html.escape(proyecto)} · {html.escape(numero)}</strong> '
+            f'{html.escape(titulo)}<br><span style="color:{TEXTO_SUAVE};font-size:0.85rem">{html.escape(motivo)}'
+            "</span></span></li>"
+            for proyecto, numero, titulo, motivo in avisos
+        )
+        + "</ul>"
     )

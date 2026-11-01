@@ -152,7 +152,7 @@ def test_iniciar_espera_una_vez_cada_puerto_de_los_enlaces(lanzadera, monkeypatc
 
 
 def test_menu_sin_negocios(lanzadera):
-    assert _abrir().sidebar.radio[0].options == ["Lanzadera", "Enlaces", "VPS", "Local"]
+    assert _abrir().sidebar.radio[0].options == ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
 
 
 @pytest.fixture
@@ -253,3 +253,11 @@ def test_parar_un_proyecto_sin_puerto_termina_sus_procesos(con_proceso, monkeypa
     at.toggle(key="switch_atajos").set_value(False).run()
     assert not at.exception
     assert con_proceso.terminados == [701]
+
+
+def test_adr_sin_proyectos_con_adr_lo_explica(lanzadera, monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME_LAUNCHER_RAIZ", str(tmp_path))
+    at = _abrir()
+    at.sidebar.radio(key="pagina").set_value("ADR").run()
+    assert not at.exception
+    assert at.info[0].value == "Ningún proyecto del registro tiene ADR en `doc/A2-ADR/`."

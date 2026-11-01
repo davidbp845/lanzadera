@@ -27,3 +27,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md) | Lanzadera en Windows: clave `proceso` para proyectos sin puerto, `psutil` en los dos sistemas, `start.cmd` desde Inicio | Aceptada |
 | [0018](0018-lanzadera-en-macos.md) | Lanzadera en macOS: puertos sin root proceso a proceso, LaunchAgent, `stop.sh` con `psutil`, contenedor propio de cada persona y máquina | Propuesta |
 | [0019](0019-perfil-de-usuario-final.md) | Perfil de usuario final (`HOME_LAUNCHER_PERFIL=usuario`): misma aplicación, sin gráficos, GitHub, VPS ni Local | Propuesta |
+| [0020](0020-pagina-adr-estado-de-las-decisiones.md) | Página ADR: estado de las decisiones leído de `doc/A2-ADR/` de cada proyecto; la implementación, de sus issues | Aceptada |

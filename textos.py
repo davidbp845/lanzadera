@@ -13,10 +13,42 @@ TEXTOS = {
         "pagina.VPS": "VPS",
         "pagina.Local": "Local",
         "idioma": "Idioma",
+        "pagina.ADR": "ADR",
+        # ADR (ADR-0020)
+        "adr.resumen": "{n} ADR en {proyectos} proyectos · leídas de `doc/A2-ADR/` de cada proyecto",
+        "adr.actualizar": "Actualizar",
+        "adr.vacio": "Ningún proyecto del registro tiene ADR en `doc/A2-ADR/`.",
+        "adr.grafico": "ADR por estado",
+        "adr.grafico_sub": "Decisiones de arquitectura de cada proyecto, por su estado",
+        "adr.revisar": "Para revisar",
+        "adr.revisar_sub": "El estado escrito no cuadra con sus issues en GitHub.",
+        "adr.revisar_nada": "Nada que revisar: cada estado cuadra con sus issues.",
+        "adr.aviso_propuesta": "Propuesta con todos sus issues cerrados: ¿pasa a Aceptada?",
+        "adr.cuentas": "**{propuestas}** propuestas sin decidir · **{en_curso}** aceptadas con issues abiertos",
+        "adr.proyecto": "Proyecto",
+        "adr.leyenda_issues": (
+            "Issues: punto relleno, abierto; hueco, cerrado. El estado se lee de GitHub con `gh`; sin respuesta, "
+            "solo el número."
+        ),
+        "adr.estado.Propuesta": "Propuesta",
+        "adr.estado.Aceptada": "Aceptada",
+        "adr.estado.Superada": "Superada",
+        "adr.estado.Rechazada": "Rechazada",
+        "adr.estado.sin": "Sin clasificar",
+        "adr.col.adr": "ADR",
+        "adr.col.decision": "Decisión",
+        "adr.col.estado": "Estado",
+        "adr.col.implementacion": "Implementación",
+        "adr.col.issues": "Issues",
+        "adr.impl.hecha": "Hecha",
+        "adr.impl.en_curso": "En curso",
+        "adr.issue.abierto": "abierto",
+        "adr.issue.cerrado": "cerrado",
+        "eje.adr": "ADR",
         "demo.repo": "Úsala en tu equipo para lanzar tus propias apps: [github.com/davidbp845/lanzadera]({url})",
         "demo.aviso": (
             "**Demo de solo lectura con datos de ejemplo.** Los interruptores están deshabilitados y en este "
-            "servidor no se ejecuta nada: puertos, RAM, tableros de GitHub, actividad de git y estado del VPS "
+            "servidor no se ejecuta nada: puertos, RAM, tableros de GitHub, ADR, actividad de git y estado del VPS "
             "son ejemplos fijos."
         ),
         "demo.deshabilitado": "Deshabilitado en la demo",
@@ -135,10 +167,41 @@ TEXTOS = {
         "pagina.VPS": "VPS",
         "pagina.Local": "Local",
         "idioma": "Language",
+        "pagina.ADR": "ADRs",
+        "adr.resumen": "{n} ADRs in {proyectos} projects · read from each project's `doc/A2-ADR/`",
+        "adr.actualizar": "Refresh",
+        "adr.vacio": "No project in the registry has ADRs in `doc/A2-ADR/`.",
+        "adr.grafico": "ADRs by status",
+        "adr.grafico_sub": "Architecture decisions of each project, by status",
+        "adr.revisar": "To review",
+        "adr.revisar_sub": "The written status doesn't match its issues on GitHub.",
+        "adr.revisar_nada": "Nothing to review: every status matches its issues.",
+        "adr.aviso_propuesta": "Proposed with all its issues closed: accept it?",
+        "adr.cuentas": "**{propuestas}** proposals pending · **{en_curso}** accepted with open issues",
+        "adr.proyecto": "Project",
+        "adr.leyenda_issues": (
+            "Issues: filled dot, open; hollow, closed. The status is read from GitHub with `gh`; without an "
+            "answer, just the number."
+        ),
+        "adr.estado.Propuesta": "Proposed",
+        "adr.estado.Aceptada": "Accepted",
+        "adr.estado.Superada": "Superseded",
+        "adr.estado.Rechazada": "Rejected",
+        "adr.estado.sin": "Unclassified",
+        "adr.col.adr": "ADR",
+        "adr.col.decision": "Decision",
+        "adr.col.estado": "Status",
+        "adr.col.implementacion": "Implementation",
+        "adr.col.issues": "Issues",
+        "adr.impl.hecha": "Done",
+        "adr.impl.en_curso": "In progress",
+        "adr.issue.abierto": "open",
+        "adr.issue.cerrado": "closed",
+        "eje.adr": "ADRs",
         "demo.repo": "Run it on your machine to launch your own apps: [github.com/davidbp845/lanzadera]({url})",
         "demo.aviso": (
             "**Read-only demo with sample data.** Switches are disabled and nothing runs on this server: "
-            "ports, RAM, GitHub boards, git activity and the VPS status are fixed examples."
+            "ports, RAM, GitHub boards, ADRs, git activity and the VPS status are fixed examples."
         ),
         "demo.deshabilitado": "Disabled in the demo",
         "demo.enlace": "Opens localhost on your machine",
