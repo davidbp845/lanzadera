@@ -14,6 +14,7 @@
 | Estado de los issues que citan las ADR | `gh issue list --state all` por repo | GitHub |
 | Commits por día (mapa de actividad) | `git log --all --format=%cs` en cada carpeta del registro y sus submódulos | Los propios proyectos |
 | RAM total de la máquina | `psutil.virtual_memory()` | — |
+| VRAM por proceso y memoria de la GPU | `nvidia-smi --query-compute-apps=pid,used_memory` y `--query-gpu=memory.total`, si hay GPU NVIDIA | — |
 | Idioma del panel | `HOME_LAUNCHER_IDIOMA` y el selector del lateral | El usuario |
 | Lista de negocios y sus puertos | `HerukaLife/heruka-flow/scripts/dev_up.sh --listar` | heruka-flow |
 | Interruptores del panel y botón Refrescar | Interacción del usuario | El usuario |

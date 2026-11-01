@@ -65,9 +65,11 @@ Solo en el modo demo ([ADR-0010](../A2-ADR/0010-demo-publica-de-solo-lectura.md)
 |---|---|
 | `activos` | Puertos en escucha |
 | `memoria_total_gb` | RAM total de la máquina (`psutil`) |
+| `memoria_gpu_gb` | Memoria de la GPU (`nvidia-smi`) |
 | `negocios` (`id`, `front`, `panel`, `api`) | `dev_up.sh --listar` |
 | `[github.<slug>]` (`repo`, `cuenta` por estado); `negocios`, el de los negocios | Remoto git, tablero del `CLAUDE.md` y recuento con `gh` |
 | `[adr.<slug>]` (`adrs`: `numero`, `fichero`, `titulo`, `estado`, `issues` con `n` y `abierto`) | `doc/A2-ADR/` de cada proyecto y el estado de sus issues con `gh` |
 | `[ram]`, por slug: `{etiqueta, puerto?, mb}` por servicio | Procesos y puertos de `psutil` |
+| `[vram]`, por slug: MB de los proyectos activos que usan la GPU | VRAM por proceso de `nvidia-smi` |
 
 `demo/vps.txt` es una salida de `scripts/estado_vps.sh`, con sus líneas `### <Sección>`.

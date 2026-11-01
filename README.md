@@ -25,7 +25,7 @@ A local launcher for the Streamlit apps (and anything else that listens on a por
 - **ADRs**: the architecture decisions of every project, read from its `doc/A2-ADR/`: a chart per project and status, the proposals whose issues are all closed, and per project a table with each decision, its status and its linked issues, open or closed.
 - **Links**: your bookmarks as a searchable table with tag filters.
 - **VPS**: memory, disk, load and failed-services meters over the raw output of a fixed, read-only script sent over SSH.
-- **Local**: total RAM, running projects, the heaviest one, RAM per project split by service, and which registry ports are listening.
+- **Local**: total RAM (and GPU memory, with an NVIDIA GPU), running projects, the heaviest one, RAM per project split by service, and which registry ports are listening.
 
 ![Launchpad](doc/capturas/launchpad.png)
 
@@ -80,7 +80,7 @@ A project without `cmd` is the launcher itself. A project without `puerto` but w
 | `HOME_LAUNCHER_DEMO` | `1` for the read-only demo |
 | `HOME_LAUNCHER_IDIOMA` | Initial language, `es` or `en` (default `es`; `en` in demo mode); switch it in the sidebar |
 
-Run it with `./start.sh` (port 8501, localhost only, set in `.streamlit/config.toml`). It has no authentication: never expose it to a network. For daily use there is a systemd user service in [`deploy/`](deploy). On Windows, run `start.cmd` instead: it creates its own `venv-windows/` the first time; a shortcut to it in the Startup folder starts it at logon. Processes, ports and RAM are read with `psutil` on both systems.
+Run it with `./start.sh` (port 8501, localhost only, set in `.streamlit/config.toml`). It has no authentication: never expose it to a network. For daily use there is a systemd user service in [`deploy/`](deploy). On Windows, run `start.cmd` instead: it creates its own `venv-windows/` the first time; a shortcut to it in the Startup folder starts it at logon. Processes, ports and RAM are read with `psutil` on both systems; GPU memory per process, with `nvidia-smi` when there is one.
 
 ## Development
 
@@ -101,7 +101,7 @@ demo.py             # sample data used instead of querying the system in demo mo
 demo/               # sample registry, links, VPS and state for the demo
 config/             # paths, demo mode, language, and the registry / VPS loaders
 vps.py              # SSH query to the VPS, sections and meters
-ram.py              # real RAM (RSS) of each running project
+ram.py              # real RAM (RSS) and GPU memory of each running project
 negocios.py         # heruka-flow businesses and their ports (dev_up.sh --listar)
 github.py           # each project's repo and board, and board counts with gh
 scripts/            # estado_vps.sh, the read-only script sent to the VPS; anadir_enlace.py, to add a link
