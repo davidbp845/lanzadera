@@ -6,7 +6,7 @@ Documento vivo: se actualiza cuando cambia la visión (Nivel A1 de la [metodolog
 2. [Entradas y salidas](2-entradas-y-salidas.md)
 3. [Modelo de datos](3-modelo-de-datos.md): registro de proyectos, enlaces y servidores VPS
 4. [Casos de uso y comandos](4-casos-de-uso.md)
-5. [Panel Streamlit](5-panel-streamlit.md): Lanzadera (con los negocios), Enlaces, VPS, Local
+5. [Panel Streamlit](5-panel-streamlit.md): Lanzadera (con los negocios), ADR, Enlaces, VPS, Local
 6. [Integraciones](6-integraciones.md): proyectos hermanos, heruka-flow, VPS (SSH), systemd, terminal
 7. [Explícitamente fuera de alcance](7-fuera-de-alcance.md)
 8. [Métricas de éxito](8-metricas-de-exito.md)

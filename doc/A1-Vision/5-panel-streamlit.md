@@ -1,10 +1,10 @@
 # 5. Panel Streamlit
 
-`app.py`, servido en `:8501` (`.streamlit/config.toml`: solo `127.0.0.1`, tema claro, `headless`). Las cuatro páginas van en `layout="wide"`, fijado en una sola `st.set_page_config` al principio.
+`app.py`, servido en `:8501` (`.streamlit/config.toml`: solo `127.0.0.1`, tema claro, `headless`). Las cinco páginas van en `layout="wide"`, fijado en una sola `st.set_page_config` al principio.
 
 ## Lateral e idioma
 
-- Menú con las cuatro páginas (`st.radio`, `key="pagina"`) y, debajo, el idioma: `ES` / `EN` (`st.segmented_control`, `key="idioma"`). Empieza en el de `HOME_LAUNCHER_IDIOMA`; sin ella, inglés en la demo y español fuera.
+- Menú con las cinco páginas, en orden Lanzadera · ADR · Enlaces · VPS · Local (`st.radio`, `key="pagina"`) y, debajo, el idioma: `ES` / `EN` (`st.segmented_control`, `key="idioma"`). Empieza en el de `HOME_LAUNCHER_IDIOMA`; sin ella, inglés en la demo y español fuera.
 - Todo texto visible sale de `textos.py`, un diccionario por idioma con las mismas claves (lo comprueba un test). Los valores internos (páginas, filtros) no cambian con el idioma: solo su `format_func`. Los números van con coma decimal en español y con punto en inglés.
 - Los títulos de las secciones del VPS se traducen por su título en `estado_vps.sh`; lo que imprime cada comando, no.
 
@@ -30,6 +30,17 @@ Filas de la misma tabla, detrás de los proyectos ([ADR-0009](../A2-ADR/0009-neg
 - Como un solo backend (`:8000`) sirve a todos, cambiar un interruptor para el stack entero y lo vuelve a levantar con los elegidos.
 - Si no hay negocios multi-tenant: una sola fila, `[negocios.single]` (Heruka Life), como un proyecto.
 - `--listar` se guarda 60 s con `st.cache_data` (el buscador relanza la página al escribir) y se invalida al arrancar o parar negocios. Un negocio nuevo lanzado desde fuera tarda hasta ese tiempo en salir; el semáforo, no, porque sale del puerto.
+
+## ADR
+
+Estado de las decisiones de arquitectura de cada proyecto ([ADR-0020](../A2-ADR/0020-pagina-adr-estado-de-las-decisiones.md)), leído por `adrs.py` sin escribir nada:
+
+- De cada fila del registro (y de heruka-flow si hay `[negocios]`), los ficheros `NNNN-*.md` de `doc/A2-ADR/` de su carpeta o, si no la tiene, de su primer submódulo; el índice `README.md` no se lee. Las filas que comparten carpeta cuentan una vez, con sus nombres juntos (« · »). Un proyecto sin ADR no sale.
+- De cada ADR: el título de su primera línea (`# NNNN — Decisión`), el estado, la primera palabra de `## Estado` (Propuesta · Aceptada · Superada · Rechazada; otra, «Sin clasificar», en gris), y los issues que cita esa sección (`#NN`, `owner/repo#NN` o enlace).
+- El estado de esos issues, con `gh issue list --state all` una vez por repo, en paralelo. La implementación sale de ahí: «Hecha» si todos están cerrados, «En curso» si alguno sigue abierto, «—» sin issues o sin respuesta de `gh`.
+- Arriba, «N ADR en M proyectos» y **Actualizar**, que vacía las dos cachés: la de los ficheros (una hora) y la de los issues (10 minutos; un fallo de `gh` no se guarda).
+- Dos tarjetas: **ADR por estado**, una barra apilada por proyecto, de más a menos, con el total al final y la misma forma que «Issues abiertos por estado» (colores naranja, azul, magenta y amarillo de la paleta validada); y **Para revisar**, las ADR en Propuesta con todos sus issues cerrados, con el recuento de propuestas sin decidir y de aceptadas con issues abiertos.
+- Debajo, un `st.selectbox` de proyecto (`key="adr_proyecto"`, «nombre (N)», de más a menos ADR) y la tabla de sus ADR en HTML propio: número con enlace al fichero en GitHub, decisión (con el aviso de «Para revisar» si toca), estado en píldora, implementación e issues enlazados, con un punto relleno si están abiertos y hueco si están cerrados.
 
 ## Enlaces
 
@@ -64,8 +75,8 @@ Filas de la misma tabla, detrás de los proyectos ([ADR-0009](../A2-ADR/0009-neg
 
 Con `HOME_LAUNCHER_DEMO=1` el panel es la demo pública de solo lectura ([ADR-0010](../A2-ADR/0010-demo-publica-de-solo-lectura.md)):
 
-- Datos de `demo/` del repo (`proyectos.toml`, `enlaces.csv`, `vps.toml`) en vez de `../datos`, y el estado que fuera de la demo se consulta al sistema, de `demo/estado.toml` (puertos en escucha, negocios, GitHub, RAM) y `demo/vps.txt` (salida de `estado_vps.sh`). La actividad se genera, siempre igual para cada día (`demo.py`).
-- Ninguna función que consulte el sistema llega a ejecutarse: puertos, procesos, `gh`, `git`, `dev_up.sh`, `dev_down.sh` y SSH devuelven los datos de ejemplo, y arrancar o parar no hace nada.
+- Datos de `demo/` del repo (`proyectos.toml`, `enlaces.csv`, `vps.toml`) en vez de `../datos`, y el estado que fuera de la demo se consulta al sistema, de `demo/estado.toml` (puertos en escucha, negocios, GitHub, ADR, RAM) y `demo/vps.txt` (salida de `estado_vps.sh`). La actividad se genera, siempre igual para cada día (`demo.py`).
+- Ninguna función que consulte el sistema llega a ejecutarse: puertos, procesos, ficheros de ADR, `gh`, `git`, `dev_up.sh`, `dev_down.sh` y SSH devuelven los datos de ejemplo, y arrancar o parar no hace nada.
 - Un aviso azul arriba de cada página; interruptores deshabilitados con tooltip; los enlaces a `localhost` y a GitHub salen como texto punteado con tooltip, no como enlace. En el lateral, un enlace al repo para usarla en local.
 
 Capturas y mockups, en [C3](../C3-Diseno-UX-UI/README.md).

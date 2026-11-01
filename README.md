@@ -22,6 +22,7 @@ A local launcher for the Streamlit apps (and anything else that listens on a por
 ## Pages
 
 - **Launchpad**: two collapsible charts (open issues per status, commit activity), then one row per project with its port, status, links, GitHub repo and board counts, and an on/off switch. Search by name, path or port; filter by folder, app type and status; sort by issues in a board column.
+- **ADRs**: the architecture decisions of every project, read from its `doc/A2-ADR/`: a chart per project and status, the proposals whose issues are all closed, and per project a table with each decision, its status and its linked issues, open or closed.
 - **Links**: your bookmarks as a searchable table with tag filters.
 - **VPS**: memory, disk, load and failed-services meters over the raw output of a fixed, read-only script sent over SSH.
 - **Local**: total RAM, running projects, the heaviest one, RAM per project split by service, and which registry ports are listening.

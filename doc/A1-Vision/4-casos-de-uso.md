@@ -13,6 +13,7 @@
 | Arrancar/parar negocios | Página "Lanzadera", filtro "Negocios": todos a la vez o uno a uno (rearranca el stack con la nueva selección) |
 | Encontrar un enlace | Página "Enlaces": buscador de texto + filtro por etiquetas |
 | Ver cuánto trabajo hay abierto y cuánta actividad | Página "Lanzadera": tarjetas de issues por estado y de actividad, plegables a la vez |
+| Seguir las decisiones de arquitectura de los proyectos | Página "ADR": gráfico por proyecto y estado, «Para revisar» y, por proyecto, la tabla de sus ADR con su implementación e issues |
 | Ver cuánta RAM gasta cada proyecto | Página "Local": indicadores, barra por proyecto y servicio, y la tabla en "Ver como tabla" |
 | Cambiar de idioma | Lateral: `ES` / `EN` |
 | Probar la demo de solo lectura | `HOME_LAUNCHER_DEMO=1 ./start.sh --server.port <libre>` (en `:8501` ya está el servicio) |

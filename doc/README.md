@@ -14,7 +14,7 @@ Esta documentación es la fuente de verdad sobre el proceso y la metodología. S
 - [A1 — Visión](A1-Vision/README.md)
 	- Problema, entradas y salidas, modelo de datos
 	- Casos de uso y comandos de Claude Code
-	- Páginas del panel (Lanzadera con los negocios, Enlaces, VPS, Local)
+	- Páginas del panel (Lanzadera con los negocios, ADR, Enlaces, VPS, Local)
 	- Integraciones con los proyectos hermanos, systemd y la terminal
 - [A2 — ADR](A2-ADR/README.md)
 	- Contenedor local con los datos; código y doc, submódulo

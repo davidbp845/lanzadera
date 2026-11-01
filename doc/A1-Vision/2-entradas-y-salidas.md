@@ -10,6 +10,8 @@
 | Estado del VPS | `ssh <host> sh -s` con `scripts/estado_vps.sh` | El servidor |
 | Estado de cada proyecto | Puertos TCP en `127.0.0.1` (`socket.connect_ex`); sin puerto, la línea de comando de sus procesos (`proceso`, con `psutil`) | Los propios proyectos al arrancar o parar |
 | PID de quien escucha un puerto, procesos y su RAM | `psutil`, en Linux y en Windows ([ADR-0017](../A2-ADR/0017-lanzadera-en-windows-y-proyectos-sin-puerto.md)) | — |
+| ADR de cada proyecto (página ADR) | `doc/A2-ADR/NNNN-*.md` de cada carpeta del registro o de su primer submódulo | Los propios proyectos (`/dev:crear-decision`, `/dev:cerrar-issue`) |
+| Estado de los issues que citan las ADR | `gh issue list --state all` por repo | GitHub |
 | Commits por día (mapa de actividad) | `git log --all --format=%cs` en cada carpeta del registro y sus submódulos | Los propios proyectos |
 | RAM total de la máquina | `psutil.virtual_memory()` | — |
 | Idioma del panel | `HOME_LAUNCHER_IDIOMA` y el selector del lateral | El usuario |
