@@ -19,5 +19,6 @@ Tablero: [tablero (proyecto GitHub #9)](https://github.com/users/davidbp845/proj
 |---|---|---|
 | [#1](https://github.com/davidbp845/home/issues/1) · [ADR-0008](../A2-ADR/0008-pagina-vps-estado-por-ssh-bajo-demanda.md) | VPS | [conectado](mockups/01%20VPS%20—%20conectado.png) · [sin conexión, con datos antiguos](mockups/02%20VPS%20—%20sin%20conexión.png) · [sin `datos/vps.toml`](mockups/03%20VPS%20—%20sin%20configurar.png) |
 | [#11](https://github.com/davidbp845/home/issues/11) · [ADR-0010](../A2-ADR/0010-demo-publica-de-solo-lectura.md) | Demo en inglés: Lanzadera, Enlaces, VPS, Local | [Lanzadera](mockups/04%20Demo%20—%20Lanzadera.png) · [Enlaces](mockups/05%20Demo%20—%20Enlaces.png) · [VPS](mockups/06%20Demo%20—%20VPS.png) · [Local](mockups/07%20Demo%20—%20Local.png) |
+| [#13](https://github.com/davidbp845/lanzadera/issues/13) | Claude (maqueta en la rama `feat/pagina-claude`) | [pregunta con opciones, variante A](mockups/08%20Claude%20—%20pregunta%20con%20opciones.png) |
 
-Cada PNG tiene al lado su HTML estático (`mockups/vps-*.html`, `mockups/demo-*.html`), para retocarlo y volver a capturarlo. Los datos que aparecen son de ejemplo.
+Cada PNG de VPS y de la demo tiene al lado su HTML estático (`mockups/vps-*.html`, `mockups/demo-*.html`), para retocarlo y volver a capturarlo; el de Claude es una captura de la maqueta en Streamlit. Los datos que aparecen son de ejemplo.

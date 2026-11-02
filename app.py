@@ -26,7 +26,7 @@ from config.proyectos import cargar as cargar_registro
 from config.proyectos import url_enlace
 from config.vps import cargar as cargar_servidores
 
-MENU = ["Lanzadera", "ADR", "Enlaces", "VPS", "Local", "Claude"]
+MENU = ["Lanzadera", "ADR", "Claude", "Enlaces", "VPS", "Local"]
 # Demo pública de solo lectura (ADR-0010): nada de lo que consulta el sistema se ejecuta;
 # cada función que lo haría devuelve los datos de demo.py.
 DEMO = paths.demo()
