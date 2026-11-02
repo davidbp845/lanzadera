@@ -29,7 +29,7 @@ Filas de la misma tabla, detrás de los proyectos ([ADR-0009](../A2-ADR/0009-neg
 - Si `dev_up.sh --listar` devuelve negocios: una fila "Heruka Flow" (sus ids activos en Enlaces) y una por negocio ("Negocio `<id>`", con su puerto de panel y enlaces a Frontend, Panel y API).
 - GitHub ([ADR-0021](../A2-ADR/0021-github-de-la-carpeta-del-repositorio.md)): "Heruka Flow" enlaza al repositorio y al tablero de heruka-flow; cada negocio, a los de su carpeta, la hermana de heruka-flow con su id (`HerukaLife/<id>`, donde viven su config y su vault), con lo que tenga: repositorio y tablero, solo repositorio o nada. Esas carpetas también cuentan en las pastillas, el gráfico de issues y la actividad.
 - Como un solo backend (`:8000`) sirve a todos, cambiar un interruptor para el stack entero y lo vuelve a levantar con los elegidos.
-- Si no hay negocios multi-tenant: una sola fila, `[negocios.single]` (Heruka Life), como un proyecto, con el GitHub de su `ruta_github`.
+- Si no hay negocios multi-tenant: una fila "Heruka Flow" solo con el repositorio y el tablero de heruka-flow, sin puerto ni interruptor ([ADR-0014](../A2-ADR/0014-proyectos-sin-app-solo-enlaces.md)), y la fila `[negocios.single]` (Heruka Life), como un proyecto, con el GitHub de su `ruta_github`.
 - `--listar` se guarda 60 s con `st.cache_data` (el buscador relanza la página al escribir) y se invalida al arrancar o parar negocios. Un negocio nuevo lanzado desde fuera tarda hasta ese tiempo en salir; el semáforo, no, porque sale del puerto.
 
 ## ADR

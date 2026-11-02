@@ -93,8 +93,10 @@ def test_sin_multitenant_la_fila_single(lanzadera):
     lanzadera.listar = ""
     at = _abrir()
     at.button_group(key="filtros_lanzadera").set_value(["heruka-flow"]).run()
-    assert _contador(at) == "1 de 5"
-    assert "**Único**" in _nombres(at)
+    assert _contador(at) == "2 de 6"
+    # Heruka Flow sigue enlazando a su repositorio y tablero, sin interruptor.
+    assert [n for n in _nombres(at) if n in {"**Heruka Flow**", "**Único**"}] == ["**Heruka Flow**", "**Único**"]
+    assert "switch_negocios_todos" not in at.session_state
 
 
 def test_pildoras_de_carpeta_tipo_y_estado(lanzadera):

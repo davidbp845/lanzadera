@@ -616,7 +616,26 @@ def _filas_lanzadera() -> list[dict]:
     carpeta = _carpeta_raiz(HERUKA_LIFE_SINGLE)
     negocios = listar_negocios()
     if not negocios:
-        # heruka-flow sin NEGOCIOS_MULTITENANT: un único negocio, que se arranca como un proyecto.
+        # heruka-flow sin NEGOCIOS_MULTITENANT: su repositorio y tablero siguen a la vista en una
+        # fila solo de enlaces, sin app que arrancar (ADR-0014), y el único negocio se arranca
+        # como un proyecto.
+        heruka_flow = {
+            "nombre": t("todos_negocios"),
+            "path_github": HERUKA_FLOW,
+            "puerto": None,
+            "proceso": None,
+            "cmd": None,
+        }
+        filas.append(
+            {
+                "texto": f"{heruka_flow['nombre']} {HERUKA_LIFE_SINGLE['ruta']}",
+                "carpeta": carpeta,
+                "activo": None,
+                "tipo": TIPO_NEGOCIOS,
+                "tablero": _github(str(HERUKA_FLOW))[1],
+                "pintar": lambda: _render_proyecto(heruka_flow, None),
+            }
+        )
         activo = esta_activo(HERUKA_LIFE_SINGLE)
         filas.append(
             {
