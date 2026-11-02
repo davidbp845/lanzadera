@@ -838,7 +838,7 @@ def render_proyectos() -> None:
         with st.container(key="cabecera_lanzadera"):
             for columna, titulo in zip(
                 st.columns(COLUMNAS_LANZADERA),
-                [t("col.proyecto"), t("col.puerto"), t("col.estado"), t("col.enlaces"), t("col.github"), ""],
+                [t("col.proyecto_app"), t("col.puerto"), t("col.estado"), t("col.enlaces"), t("col.github"), ""],
                 strict=True,
             ):
                 columna.markdown(f"**{titulo}**" if titulo else "")
