@@ -64,10 +64,10 @@ CON_NEGOCIOS = HERUKA_FLOW is not None
 # Carpetas de las que se leen GitHub y la actividad: la de cada proyecto (`ruta_github` o `ruta`)
 # y, si lo hay, heruka-flow (las de los negocios se suman en cada consulta: dependen de
 # `dev_up.sh --listar`).
-RUTAS_REPOS = [p["path_github"] for p in PROYECTOS] + ([HERUKA_FLOW] if CON_NEGOCIOS else [])
+RUTAS_REPOS = [p["path_github"] for p in PROYECTOS if p["path_github"]] + ([HERUKA_FLOW] if CON_NEGOCIOS else [])
 ENLACES_CSV = paths.enlaces()
 # En la demo, el GitHub de cada proyecto se busca por su slug en demo/estado.toml.
-SLUG_POR_RUTA = {str(p["path_github"]): p["slug"] for p in PROYECTOS} | (
+SLUG_POR_RUTA = {str(p["path_github"]): p["slug"] for p in PROYECTOS if p["path_github"]} | (
     {str(HERUKA_FLOW): "negocios"} if CON_NEGOCIOS else {}
 )
 
@@ -340,8 +340,13 @@ def _sin_enlace(texto: str, explicacion: str) -> str:
     )
 
 
-def _pintar_github(columna, path: Path) -> None:
-    repo, tablero = _github(str(path))
+def _tablero_de(path: Path | None) -> tuple[str, int] | None:
+    return _github(str(path))[1] if path else None
+
+
+def _pintar_github(columna, path: Path | None) -> None:
+    # Sin carpeta (`ruta_github = false`), la fila no tiene GitHub: el guion, como sin repositorio.
+    repo, tablero = _github(str(path)) if path else (None, None)
     if DEMO:
         partes = [_sin_enlace(t("repositorio"), t("demo.github")) if repo else None]
         if tablero:
@@ -492,7 +497,8 @@ def _carpetas_negocios() -> list[tuple[str, Path]]:
         return []
     if negocios := listar_negocios():
         return [(t("negocio", id=n["id"]), _carpeta_negocio(n)) for n in negocios]
-    return [(HERUKA_LIFE_SINGLE["nombre"], HERUKA_LIFE_SINGLE["path_github"])]
+    single = HERUKA_LIFE_SINGLE["path_github"]
+    return [(HERUKA_LIFE_SINGLE["nombre"], single)] if single else []
 
 
 def _puertos_negocio(negocio: dict) -> list[int]:
@@ -600,7 +606,7 @@ def _filas_lanzadera() -> list[dict]:
                 "carpeta": _carpeta_raiz(proyecto),
                 "activo": activo,
                 "tipo": proyecto["tipo"],
-                "tablero": _github(str(proyecto["path_github"]))[1],
+                "tablero": _tablero_de(proyecto["path_github"]),
                 "pintar": lambda proyecto=proyecto, activo=activo: _render_proyecto(proyecto, activo),
             }
         )
@@ -618,7 +624,7 @@ def _filas_lanzadera() -> list[dict]:
                 "carpeta": carpeta,
                 "activo": activo,
                 "tipo": TIPO_NEGOCIOS,
-                "tablero": _github(str(HERUKA_LIFE_SINGLE["path_github"]))[1],
+                "tablero": _tablero_de(HERUKA_LIFE_SINGLE["path_github"]),
                 "pintar": lambda: _render_proyecto(HERUKA_LIFE_SINGLE, activo),
             }
         )
@@ -676,7 +682,7 @@ def _issues_por_proyecto() -> list[tuple[list[str], dict[str, int]]]:
     """`(nombres, cuenta)` por tablero: cada tablero cuenta una vez, con todos los proyectos que lo comparten."""
     recuentos = _recuentos(_tableros())
     por_tablero: dict[tuple[str, int], list[str]] = {}
-    nombres_y_rutas = [(p["nombre"], p["path_github"]) for p in PROYECTOS] + _carpetas_negocios()
+    nombres_y_rutas = [(p["nombre"], p["path_github"]) for p in PROYECTOS if p["path_github"]] + _carpetas_negocios()
     if CON_NEGOCIOS:
         nombres_y_rutas.append((t("todos_negocios"), HERUKA_FLOW))
     for nombre, ruta in nombres_y_rutas:
@@ -1287,7 +1293,7 @@ def render_local() -> None:
 @st.cache_data(ttl=3600, show_spinner=False)
 def _adrs_por_carpeta() -> list[tuple[list[str], dict]]:
     """`(nombres, proyecto)` por carpeta de ADR: las filas que comparten carpeta cuentan una vez."""
-    nombres_y_rutas = [(p["nombre"], p["path_github"]) for p in PROYECTOS] + _carpetas_negocios()
+    nombres_y_rutas = [(p["nombre"], p["path_github"]) for p in PROYECTOS if p["path_github"]] + _carpetas_negocios()
     if CON_NEGOCIOS:
         nombres_y_rutas.append((t("todos_negocios"), HERUKA_FLOW))
     por_carpeta: dict[str, tuple[list[str], dict]] = {}

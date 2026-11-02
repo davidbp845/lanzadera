@@ -118,3 +118,11 @@ def test_proceso_es_opcional(tmp_path):
     (atajos,) = cargar(tmp_path / "proyectos.toml", tmp_path)["proyectos"]
     assert (atajos["puerto"], atajos["proceso"]) == (None, "atajos.ahk")
     assert cargar(FIXTURE, tmp_path)["proyectos"][0]["proceso"] is None
+
+
+def test_ruta_github_false_es_sin_github(tmp_path):
+    (tmp_path / "proyectos.toml").write_text(
+        '[[proyecto]]\nnombre = "Consola"\nslug = "consola"\nruta = "Otros/negocios"\nruta_github = false\n'
+    )
+    (consola,) = cargar(tmp_path / "proyectos.toml", tmp_path)["proyectos"]
+    assert consola["path_github"] is None

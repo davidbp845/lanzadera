@@ -6,14 +6,20 @@ from pathlib import Path
 from config import paths
 
 
+def _carpeta_github(entrada: dict, raiz: Path) -> Path | None:
+    ruta_github = entrada.get("ruta_github", entrada["ruta"])
+    return raiz / ruta_github if ruta_github is not False else None
+
+
 def _proyecto(entrada: dict, raiz: Path) -> dict:
     # Sin puerto ni proceso, el proyecto no tiene app: su fila es solo de enlaces de GitHub (ADR-0014).
     # Sin puerto pero con proceso, su estado sale de la línea de comando de sus procesos (ADR-0017).
     proyecto = {
         **entrada,
         "path": raiz / entrada["ruta"],
-        # Repositorio y tablero: los de `ruta_github` si el proyecto se arranca desde el código de otro (ADR-0021).
-        "path_github": raiz / entrada.get("ruta_github", entrada["ruta"]),
+        # Repositorio y tablero: los de `ruta_github` si el proyecto se arranca desde el código de otro;
+        # con `false`, ninguno: es parte de ese otro proyecto y su GitHub ya sale en su fila (ADR-0021).
+        "path_github": _carpeta_github(entrada, raiz),
         "cmd": entrada.get("cmd"),
         "puerto": entrada.get("puerto"),
         "proceso": entrada.get("proceso"),
