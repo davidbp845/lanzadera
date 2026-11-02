@@ -77,6 +77,15 @@ def test_los_graficos_siguen_plegados_al_volver_de_otra_pagina(modo_demo):
     assert len(at.get("vega_lite_chart")) == 2
 
 
+def test_las_tarjetas_de_adr_se_pliegan_juntas_con_su_resumen(modo_demo):
+    at = _abrir("ADR")
+    at.button(key="plegar_adr_revisar").click().run()
+    assert not at.get("vega_lite_chart")
+    assert any("to review ·" in c.value for c in at.caption)
+    at.button(key="plegar_adr_grafico").click().run()
+    assert len(at.get("vega_lite_chart")) == 1
+
+
 def test_los_dos_idiomas_tienen_los_mismos_textos():
     assert textos.TEXTOS["es"].keys() == textos.TEXTOS["en"].keys()
 

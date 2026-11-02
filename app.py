@@ -716,14 +716,40 @@ def _grafico_issues(issues: list[tuple[list[str], dict[str, int]]], ejes: dict[s
     st.altair_chart(graficos.issues_por_estado(issues, ejes), width="stretch")
 
 
-def _alternar_graficos() -> None:
-    st.session_state["graficos_lanzadera"] = not st.session_state["graficos_lanzadera"]
+def _alternar(clave: str) -> None:
+    st.session_state[clave] = not st.session_state[clave]
+
+
+def _tarjetas_plegables(clave: str, tarjetas: list[tuple]) -> None:
+    """Tarjetas en columnas, cada una `(id, título, subtítulo, resumen, pintar)`, con un botón de
+    plegar en cada una; todas se pliegan y despliegan a la vez y, plegadas, enseñan su resumen."""
+    # Clave propia, no de un widget: Streamlit borra el estado de los widgets de las páginas que
+    # no se pintan, y lo plegado tiene que seguir así al volver de otra página.
+    visibles = st.session_state.setdefault(clave, True)
+    for columna, (id_tarjeta, titulo, subtitulo, resumen, pintar) in zip(
+        st.columns(len(tarjetas)), tarjetas, strict=True
+    ):
+        with columna, st.container(border=True, height="stretch"):
+            with st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute"):
+                _titulo_tarjeta(titulo)
+                st.button(
+                    "",
+                    icon=":material/expand_less:" if visibles else ":material/expand_more:",
+                    help=t("tarjetas.plegar") if visibles else t("tarjetas.desplegar"),
+                    key=f"plegar_{id_tarjeta}",
+                    type="tertiary",
+                    on_click=_alternar,
+                    args=(clave,),
+                )
+            if not visibles:
+                st.caption(resumen)
+                continue
+            st.caption(subtitulo)
+            if pintar:
+                pintar()
 
 
 def _graficos_lanzadera() -> None:
-    # Clave propia, no de un widget: Streamlit borra el estado de los widgets de las páginas que
-    # no se pintan, y lo plegado tiene que seguir así al volver de otra página.
-    visibles = st.session_state.setdefault("graficos_lanzadera", True)
     issues = _issues_por_proyecto()
     abiertos = sum(cuenta[e] for _nombre, cuenta in issues for e in github.ESTADOS[:4])
     commits, repos = _actividad(date.today())
@@ -735,42 +761,25 @@ def _graficos_lanzadera() -> None:
         "dia": t("actividad.dia"),
         "commits": t("actividad.commits"),
     }
-
-    tarjetas = [
-        (
-            "issues",
-            t("issues.titulo"),
-            t("issues.sub") if issues else t("issues.vacio"),
-            t("issues.resumen", n=abiertos, tableros=len(issues)),
-            (lambda: _grafico_issues(issues, ejes)) if issues else None,
-        ),
-        (
-            "actividad",
-            t("actividad.titulo"),
-            t("actividad.sub", n=total_commits, repos=repos, semanas=SEMANAS_ACTIVIDAD),
-            t("actividad.resumen", n=total_commits, semanas=SEMANAS_ACTIVIDAD),
-            lambda: st.altair_chart(graficos.actividad(commits, _idioma(), ejes), width="stretch"),
-        ),
-    ]
-    # Un botón en cada tarjeta, pero las dos se pliegan y despliegan a la vez.
-    for columna, (clave, titulo, subtitulo, resumen, pintar) in zip(st.columns(2), tarjetas, strict=True):
-        with columna, st.container(border=True, height="stretch"):
-            with st.container(horizontal=True, vertical_alignment="center", horizontal_alignment="distribute"):
-                _titulo_tarjeta(titulo)
-                st.button(
-                    "",
-                    icon=":material/expand_less:" if visibles else ":material/expand_more:",
-                    help=t("graficos.ocultar") if visibles else t("graficos.mostrar"),
-                    key=f"plegar_{clave}",
-                    type="tertiary",
-                    on_click=_alternar_graficos,
-                )
-            if not visibles:
-                st.caption(resumen)
-                continue
-            st.caption(subtitulo)
-            if pintar:
-                pintar()
+    _tarjetas_plegables(
+        "graficos_lanzadera",
+        [
+            (
+                "issues",
+                t("issues.titulo"),
+                t("issues.sub") if issues else t("issues.vacio"),
+                t("issues.resumen", n=abiertos, tableros=len(issues)),
+                (lambda: _grafico_issues(issues, ejes)) if issues else None,
+            ),
+            (
+                "actividad",
+                t("actividad.titulo"),
+                t("actividad.sub", n=total_commits, repos=repos, semanas=SEMANAS_ACTIVIDAD),
+                t("actividad.resumen", n=total_commits, semanas=SEMANAS_ACTIVIDAD),
+                lambda: st.altair_chart(graficos.actividad(commits, _idioma(), ejes), width="stretch"),
+            ),
+        ],
+    )
 
 
 def render_proyectos() -> None:
@@ -1411,21 +1420,39 @@ def render_adr() -> None:
     propuestas = sum(f["estado"] == "Propuesta" for f in todas)
     en_curso = sum(f["estado"] == "Aceptada" and f["implementacion"] == "en_curso" for f in todas)
 
-    col_grafico, col_revisar = st.columns(2)
-    with col_grafico, st.container(border=True, height="stretch"):
-        _titulo_tarjeta(t("adr.grafico"))
-        st.caption(t("adr.grafico_sub"))
+    ejes = {"proyecto": t("eje.proyecto"), "estado": t("eje.estado")}
+    por_estado = [(n, sum(c[n] for _g, c in recuentos)) for n in nombres]
+
+    def _grafico_adr() -> None:
         st.html(graficos.leyenda(nombres, colores))
-        ejes = {"proyecto": t("eje.proyecto"), "estado": t("eje.estado")}
         st.altair_chart(graficos.por_estado(recuentos, nombres, colores, ejes, t("eje.adr")), width="stretch")
-    with col_revisar, st.container(border=True, height="stretch"):
-        _titulo_tarjeta(t("adr.revisar"))
-        st.caption(t("adr.revisar_sub"))
+
+    def _revisar_adr() -> None:
         if revisar:
             st.html(graficos.revisar_adr(revisar))
         else:
             st.markdown(t("adr.revisar_nada"))
         st.caption(t("adr.cuentas", propuestas=propuestas, en_curso=en_curso))
+
+    _tarjetas_plegables(
+        "tarjetas_adr",
+        [
+            (
+                "adr_grafico",
+                t("adr.grafico"),
+                t("adr.grafico_sub"),
+                " · ".join(f"{nombre}: {n}" for nombre, n in por_estado if n),
+                _grafico_adr,
+            ),
+            (
+                "adr_revisar",
+                t("adr.revisar"),
+                t("adr.revisar_sub"),
+                t("adr.revisar_resumen", n=len(revisar), propuestas=propuestas, en_curso=en_curso),
+                _revisar_adr,
+            ),
+        ],
+    )
 
     opciones = {p["carpeta"]: (nombres_grupo, p) for nombres_grupo, p in grupos}
     elegido = st.selectbox(
