@@ -1370,7 +1370,7 @@ def _filas_adr(proyecto: dict, estados: dict[str, dict[int, bool] | None]) -> li
             {
                 **adr,
                 "issues": issues,
-                "implementacion": adrs.implementacion(abiertos),
+                "implementacion": adrs.implementacion(adr["estado"], abiertos),
                 "revisar": adrs.para_revisar(adr["estado"], abiertos),
             }
         )

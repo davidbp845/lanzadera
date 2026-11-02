@@ -105,14 +105,19 @@ def del_proyecto(path: Path) -> dict | None:
     }
 
 
-def implementacion(abiertos: list[bool | None]) -> str | None:
+def implementacion(adr_estado: str | None, abiertos: list[bool | None]) -> str | None:
     """`hecha` si todos sus issues están cerrados, `en_curso` si alguno sigue abierto; None sin issues
-    o si no se sabe el estado de alguno."""
+    o si no se sabe el estado de alguno.
+
+    En una Propuesta, el issue abierto espera a que se decida, no se está haciendo: `pendiente`.
+    """
     if not abiertos or (None in abiertos and True not in abiertos):
         return None
-    return "en_curso" if True in abiertos else "hecha"
+    if True not in abiertos:
+        return "hecha"
+    return "pendiente" if adr_estado == "Propuesta" else "en_curso"
 
 
 def para_revisar(adr_estado: str | None, abiertos: list[bool | None]) -> bool:
     """Una Propuesta con todos sus issues cerrados: o se aceptó y falta escribirlo, o sobra el issue."""
-    return adr_estado == "Propuesta" and implementacion(abiertos) == "hecha"
+    return adr_estado == "Propuesta" and implementacion(adr_estado, abiertos) == "hecha"

@@ -96,12 +96,13 @@ def test_sin_adr_no_hay_proyecto(tmp_path):
         ("Aceptada", [False, None], None, False),
         ("Aceptada", [True, None], "en_curso", False),
         ("Propuesta", [False], "hecha", True),
-        ("Propuesta", [True], "en_curso", False),
+        ("Propuesta", [True], "pendiente", False),
+        ("Propuesta", [False, True], "pendiente", False),
         ("Propuesta", [None], None, False),
     ],
 )
 def test_implementacion_y_revision_salen_de_los_issues(estado, abiertos, implementacion, revisar):
-    assert adrs.implementacion(abiertos) == implementacion
+    assert adrs.implementacion(estado, abiertos) == implementacion
     assert adrs.para_revisar(estado, abiertos) is revisar
 
 
