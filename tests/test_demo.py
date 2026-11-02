@@ -89,6 +89,12 @@ def test_la_tabla_de_adr_muestra_todas_y_filtra_por_estado(modo_demo):
     assert "Rules valid per year" in tabla
     assert "Batch export to the phone" not in tabla
     assert "Archive what's resolved" not in tabla
+    at.pills(key="adr_filtros").set_value([]).run()
+    at.session_state["buscar_adr"] = {"value": "telegram"}
+    at.run()
+    tabla = at.get("html")[-1].proto.body
+    assert "Telegram bot" in tabla
+    assert "Rules valid per year" not in tabla
 
 
 def test_las_tarjetas_de_adr_se_pliegan_juntas_con_su_resumen(modo_demo):

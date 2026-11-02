@@ -1455,7 +1455,8 @@ def render_adr() -> None:
     )
 
     opciones = {p["carpeta"]: (nombres_grupo, p) for nombres_grupo, p in grupos}
-    with st.container(horizontal=True, vertical_alignment="bottom"):
+    with st.container(horizontal=True, vertical_alignment="center"):
+        texto = _buscar("buscar_adr", t("buscar.adr"))
         elegido = st.selectbox(
             t("adr.proyecto"),
             list(opciones),
@@ -1463,6 +1464,7 @@ def render_adr() -> None:
             placeholder=t("adr.todos"),
             format_func=lambda c: f"{' · '.join(opciones[c][0])} ({len(opciones[c][1]['adrs'])})",
             key="adr_proyecto",
+            label_visibility="collapsed",
             width=420,
         )
         # Los estados que hay y, aparte, las aceptadas que aún tienen issues abiertos.
@@ -1477,7 +1479,11 @@ def render_adr() -> None:
             width="content",
         )
 
-    def _pasa(f: dict) -> bool:
+    buscado = texto.strip().lower()
+
+    def _pasa(nombres_grupo: list[str], f: dict) -> bool:
+        if buscado and buscado not in " ".join([*nombres_grupo, f["numero"], f["titulo"]]).lower():
+            return False
         if not seleccion:
             return True
         en_curso = f["estado"] == "Aceptada" and f["implementacion"] == "en_curso"
@@ -1488,7 +1494,7 @@ def render_adr() -> None:
         for nombres_grupo, p in grupos
         if elegido is None or p["carpeta"] == elegido
         for f in filas[p["carpeta"]]
-        if _pasa(f)
+        if _pasa(nombres_grupo, f)
     ]
     # Descendente por issues abiertos y, a igualdad, por issues en total; sorted es estable,
     # así que el empate conserva el orden de proyectos y de número.
