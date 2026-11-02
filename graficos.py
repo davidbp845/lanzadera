@@ -317,7 +317,9 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
     celda = "padding:8px 12px;vertical-align:top"
     columnas = ("proyecto",) * con_proyecto + ("adr", "decision", "estado", "implementacion", "issues")
     cabecera = "".join(
-        f'<th scope="col" style="{celda};font-weight:600;text-align:left">{html.escape(textos[c])}</th>'
+        # Cabecera fija: la tabla hace scroll dentro de su caja.
+        f'<th scope="col" style="{celda};font-weight:600;text-align:left;position:sticky;top:0;'
+        f'background:#F7F8FA">{html.escape(textos[c])}</th>'
         for c in columnas
     )
     cuerpo = []
@@ -339,7 +341,7 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
             "</tr>"
         )
     return (
-        '<div style="overflow-x:auto;border:1px solid rgba(49,51,63,0.15);border-radius:0.5rem">'
+        '<div style="overflow:auto;max-height:60vh;border:1px solid rgba(49,51,63,0.15);border-radius:0.5rem">'
         '<table style="width:100%;min-width:640px;border-collapse:collapse;font-size:0.9rem">'
         f'<thead><tr style="background:#F7F8FA;color:{TEXTO_SUAVE};font-size:0.85rem">{cabecera}</tr></thead>'
         f"<tbody>{''.join(cuerpo)}</tbody></table></div>"
