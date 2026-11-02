@@ -15,6 +15,7 @@ Si un proyecto cambia su estructura (p. ej. pasa a contenedor + submódulo), se 
 - `scripts/dev_up.sh --listar`: una línea por negocio, `id<TAB>front<TAB>panel<TAB>api`.
 - `scripts/dev_up.sh --skip-checks --negocios a,b`: arranca los elegidos.
 - `scripts/dev_down.sh`: para todo el stack. Lo hace por patrón de comando, así que también para cualquier otro proyecto que use `npm run dev` o `astro dev`.
+- Cada negocio vive en la carpeta hermana de heruka-flow con su id: de ahí salen su repositorio y su tablero ([ADR-0021](../A2-ADR/0021-github-de-la-carpeta-del-repositorio.md)).
 
 Ver [ADR-0005](../A2-ADR/0005-negocios-los-puertos-los-decide-heruka-flow.md).
 
