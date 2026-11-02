@@ -298,7 +298,7 @@ def fila_heruka_flow(
     negocios: list[dict],
     ruta: Path,
     single: dict,
-    nombre: str = "Todos los negocios",
+    nombre: str = "Heruka Flow",
     negocio: str = "Negocio {id}",
     backend: str = "Backend común",
 ) -> dict:

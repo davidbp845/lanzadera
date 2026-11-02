@@ -90,7 +90,7 @@ TEXTOS = {
         "repositorio": "repositorio",
         "tablero": "tablero",
         "en_curso": "Claude Code trabajando ahora en",
-        "todos_negocios": "Todos los negocios",
+        "todos_negocios": "Heruka Flow",
         "negocio": "Negocio {id}",
         # Enlaces
         "enlaces.vacio": (

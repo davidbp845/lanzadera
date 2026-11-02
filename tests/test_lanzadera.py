@@ -61,7 +61,11 @@ def _contador(at):
 
 
 def _nombres(at):
-    return [m.value for m in at.markdown if m.value.startswith("**") and m.value not in {"**Proyecto**", "**Puerto**"}]
+    return [
+        m.value
+        for m in at.markdown
+        if m.value.startswith("**") and m.value not in {"**Proyecto / Aplicación**", "**Puerto**"}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -78,7 +82,11 @@ def test_negocios_multitenant_como_filas(lanzadera):
     at = _abrir()
     at.button_group(key="filtros_lanzadera").set_value(["heruka-flow"]).run()
     assert _contador(at) == "3 de 7"
-    assert [n for n in _nombres(at) if "egocio" in n] == ["**Todos los negocios**", "**Negocio a**", "**Negocio b**"]
+    assert [n for n in _nombres(at) if "egocio" in n or "Heruka" in n] == [
+        "**Heruka Flow**",
+        "**Negocio a**",
+        "**Negocio b**",
+    ]
 
 
 def test_sin_multitenant_la_fila_single(lanzadera):

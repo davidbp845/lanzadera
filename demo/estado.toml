@@ -14,7 +14,8 @@ negocios = [
   { id = "bloom", front = 3110, panel = 3111, api = 8010 },
 ]
 
-# Repositorio y tablero de cada proyecto (por slug; `negocios`, el de los negocios),
+# Repositorio y tablero de cada proyecto (por slug; `negocios`, el del proyecto de los
+# negocios; un negocio, por su id, con el de su carpeta: `bloom` no tiene),
 # con sus items por estado: Backlog, Ready, In progress, In review, Done; `en_curso`, los
 # issues In progress con una sesión de Claude Code trabajando ahora (su pastilla parpadea).
 [github.launchpad]
@@ -42,6 +43,9 @@ cuenta = [1, 1, 0, 0, 9]
 [github.negocios]
 repo = "https://github.com/example/business-core"
 cuenta = [7, 2, 3, 1, 140]
+[github.acme]
+repo = "https://github.com/example/acme"
+cuenta = [4, 1, 0, 1, 31]
 
 # RAM (MB) por servicio de cada proyecto activo; `puerto` falta en lo que no escucha.
 [ram]

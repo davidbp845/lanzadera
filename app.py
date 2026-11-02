@@ -61,7 +61,8 @@ INTENTOS_ESPERA_NEGOCIOS = REGISTRO["intentos_negocios"]
 HERUKA_LIFE_SINGLE = REGISTRO["heruka_life_single"]
 # Sin `[negocios]` en el registro no hay filas de negocios ni nada de heruka-flow en el panel.
 CON_NEGOCIOS = HERUKA_FLOW is not None
-# Carpetas de las que se leen GitHub y la actividad: los proyectos y, si lo hay, heruka-flow.
+# Carpetas de las que se leen GitHub y la actividad: los proyectos y, si lo hay, heruka-flow
+# (las de los negocios multi-tenant se suman en cada consulta: salen de `dev_up.sh --listar`).
 RUTAS_REPOS = [p["path"] for p in PROYECTOS] + ([HERUKA_FLOW] if CON_NEGOCIOS else [])
 ENLACES_CSV = paths.enlaces()
 # En la demo, el GitHub de cada proyecto se busca por su slug en demo/estado.toml.
@@ -202,7 +203,8 @@ COLUMNAS_LANZADERA = [2.4, 0.8, 1.2, 1.6, 4, 0.6]
 def _github(path: str) -> tuple[str | None, tuple[str, int] | None]:
     # Leer git y CLAUDE.md de cada proyecto en cada rerun (cada interruptor) sobra: cambian muy poco.
     if DEMO:
-        return demo.repositorio_y_tablero(SLUG_POR_RUTA.get(path, ""))
+        # Las carpetas de los negocios no están en el registro: su slug es su id, el nombre de la carpeta.
+        return demo.repositorio_y_tablero(SLUG_POR_RUTA.get(path, Path(path).name))
     return github.repositorio(Path(path)), github.tablero_id(Path(path), paths.raiz_data())
 
 
@@ -229,7 +231,8 @@ def _actualizar_tableros() -> None:
 
 
 def _tableros() -> tuple[tuple[str, int], ...]:
-    return tuple(sorted({t for ruta in RUTAS_REPOS if (t := _github(str(ruta))[1])}))
+    rutas = RUTAS_REPOS + [ruta for _nombre, ruta in _carpetas_negocios()]
+    return tuple(sorted({t for ruta in rutas if (t := _github(str(ruta))[1])}))
 
 
 # Color de cada estado del tablero, en el orden de github.ESTADOS, el mismo que el del
@@ -473,6 +476,19 @@ def listar_negocios() -> list[dict]:
     return negocios_hf.listar(HERUKA_FLOW)
 
 
+def _carpeta_negocio(negocio: dict) -> Path:
+    # Cada negocio vive junto a heruka-flow, en la carpeta con su id: su config, su vault y su
+    # propio repositorio (y tablero, si lo tiene). El código es el de heruka-flow.
+    return HERUKA_FLOW.parent / negocio["id"]
+
+
+def _carpetas_negocios() -> list[tuple[str, Path]]:
+    """`(nombre, carpeta)` de cada negocio multi-tenant, para GitHub y la actividad."""
+    if not CON_NEGOCIOS:
+        return []
+    return [(t("negocio", id=n["id"]), _carpeta_negocio(n)) for n in listar_negocios()]
+
+
 def _puertos_negocio(negocio: dict) -> list[int]:
     return [negocio["front"], negocio["panel"], negocio["api"]]
 
@@ -552,7 +568,7 @@ def _render_negocio(negocio: dict, negocios: list[dict], activos: list[dict]) ->
                 ("API", f"http://localhost:{negocio['api']}/health"),
             ],
         )
-    _pintar_github(enlaces_github, HERUKA_FLOW)
+    _pintar_github(enlaces_github, _carpeta_negocio(negocio))
     with interruptor:
         key = f"switch_negocio_{negocio['id']}"
         st.session_state[key] = activo
@@ -620,7 +636,7 @@ def _filas_lanzadera() -> list[dict]:
                 "carpeta": carpeta,
                 "activo": negocio in activos,
                 "tipo": TIPO_NEGOCIOS,
-                "tablero": _github(str(HERUKA_FLOW))[1],
+                "tablero": _github(str(_carpeta_negocio(negocio)))[1],
                 "pintar": lambda negocio=negocio: _render_negocio(negocio, negocios, activos),
             }
         )
@@ -646,7 +662,7 @@ def _actividad(hasta: date) -> tuple[dict[date, int], int]:
     desde = hasta - timedelta(days=hasta.weekday() + 7 * (SEMANAS_ACTIVIDAD - 1))
     if DEMO:
         return demo.actividad(desde, hasta), len(PROYECTOS)
-    repos = actividad.repositorios(RUTAS_REPOS)
+    repos = actividad.repositorios(RUTAS_REPOS + [ruta for _nombre, ruta in _carpetas_negocios()])
     return actividad.commits_por_dia(repos, desde, hasta), len(repos)
 
 
@@ -654,9 +670,9 @@ def _issues_por_proyecto() -> list[tuple[list[str], dict[str, int]]]:
     """`(nombres, cuenta)` por tablero: cada tablero cuenta una vez, con todos los proyectos que lo comparten."""
     recuentos = _recuentos(_tableros())
     por_tablero: dict[tuple[str, int], list[str]] = {}
-    nombres_y_rutas = [(p["nombre"], p["path"]) for p in PROYECTOS]
+    nombres_y_rutas = [(p["nombre"], p["path"]) for p in PROYECTOS] + _carpetas_negocios()
     if CON_NEGOCIOS:
-        nombres_y_rutas.append((HERUKA_LIFE_SINGLE["nombre"], HERUKA_FLOW))
+        nombres_y_rutas.append((t("todos_negocios"), HERUKA_FLOW))
     for nombre, ruta in nombres_y_rutas:
         tablero = _github(str(ruta))[1]
         if tablero and recuentos.get(tablero):
