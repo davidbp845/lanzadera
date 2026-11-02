@@ -13,6 +13,7 @@ import streamlit as st
 
 import actividad
 import adrs
+import claude
 import demo
 import github
 import graficos
@@ -25,7 +26,7 @@ from config.proyectos import cargar as cargar_registro
 from config.proyectos import url_enlace
 from config.vps import cargar as cargar_servidores
 
-MENU = ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
+MENU = ["Lanzadera", "ADR", "Enlaces", "VPS", "Local", "Claude"]
 # Demo pública de solo lectura (ADR-0010): nada de lo que consulta el sistema se ejecuta;
 # cada función que lo haría devuelve los datos de demo.py.
 DEMO = paths.demo()
@@ -1466,6 +1467,137 @@ def render_adr() -> None:
     st.caption(t("adr.leyenda_issues"))
 
 
+def _conversacion_claude(slug: str) -> dict:
+    # Una conversación por proyecto: cambiar de proyecto en el selector no pierde la del otro.
+    todas = st.session_state.setdefault("claude_conv", {})
+    return todas.setdefault(slug, {"mensajes": list(claude.CONVERSACION[_idioma()]), "respuestas": {}})
+
+
+def _pintar_conversacion(slug: str, conv: dict, variante: str) -> int | None:
+    """Pinta los mensajes hasta la primera pregunta o permiso sin contestar; devuelve su índice."""
+    for i, m in enumerate(conv["mensajes"]):
+        hecho = conv["respuestas"].get(i)
+        if m["rol"] == "usuario":
+            st.chat_message("user").markdown(m["texto"])
+        elif m["rol"] == "claude":
+            with st.chat_message("assistant"):
+                if m.get("pasos"):
+                    with st.expander(t("claude.pasos", n=len(m["pasos"])), icon=":material/build:"):
+                        st.markdown("\n".join(f"- {p}" for p in m["pasos"]))
+                st.markdown(m["texto"])
+        elif m["rol"] == "pregunta":
+            with st.chat_message("assistant"):
+                if variante == "B" or hecho is not None:
+                    opciones = "\n".join(f"{n}. **{e}**: {d}" for n, (e, d) in enumerate(m["opciones"], 1))
+                    st.markdown(f"{m['pregunta']}\n\n{opciones}" if hecho is None else m["pregunta"])
+                    if hecho is None:
+                        st.caption(t("claude.contesta_chat"))
+                        return i
+                else:
+                    with st.container(border=True):
+                        st.markdown(f"**{m['cabecera']}** · {m['pregunta']}")
+                        etiquetas = [e for e, _d in m["opciones"]]
+                        eleccion = st.radio(
+                            m["pregunta"],
+                            etiquetas,
+                            captions=[d for _e, d in m["opciones"]],
+                            key=f"claude_preg_{slug}_{i}",
+                            label_visibility="collapsed",
+                        )
+                        if st.button(t("claude.responder"), type="primary", key=f"claude_resp_{slug}_{i}"):
+                            conv["respuestas"][i] = eleccion
+                            st.rerun()
+                    return i
+            st.chat_message("user").markdown(hecho)
+        elif m["rol"] == "permiso":
+            with st.chat_message("assistant"):
+                if variante == "B":
+                    st.caption(t("claude.por_regla", herramienta=m["herramienta"], detalle=m["detalle"]))
+                elif hecho is None:
+                    with st.container(border=True):
+                        st.markdown(t("claude.permiso", herramienta=m["herramienta"], detalle=m["detalle"]))
+                        with st.container(horizontal=True):
+                            for valor, icono, tipo in (
+                                ("permitido", ":material/check:", "primary"),
+                                ("denegado", ":material/block:", "secondary"),
+                            ):
+                                if st.button(
+                                    t(f"claude.{valor}.boton"), icon=icono, type=tipo, key=f"claude_{valor}_{slug}_{i}"
+                                ):
+                                    conv["respuestas"][i] = valor
+                                    st.rerun()
+                    return i
+                else:
+                    st.caption(t(f"claude.{hecho}", herramienta=m["herramienta"], detalle=m["detalle"]))
+                    if hecho == "denegado":
+                        return None
+    return None
+
+
+def _elegir_sugerencia(slug: str) -> None:
+    clave = f"claude_sugerencia_{slug}"
+    if elegida := st.session_state.get(clave):
+        _conversacion_claude(slug)["mensajes"].append({"rol": "usuario", "texto": elegida})
+        _conversacion_claude(slug)["mensajes"].append({"rol": "claude", "texto": t("claude.eco")})
+        del st.session_state[clave]
+
+
+def render_claude() -> None:
+    st.title(t("pagina.Claude"))
+    _aviso_demo()
+    st.info(t("claude.maqueta"), icon=":material/draw:")
+
+    por_slug = {p["slug"]: p for p in PROYECTOS}
+    col_proyecto, col_variante, col_nueva = st.columns([3, 2, 1], vertical_alignment="bottom")
+    with col_proyecto:
+        slug = st.selectbox(
+            t("claude.proyecto"), list(por_slug), format_func=lambda s: por_slug[s]["nombre"], key="claude_proyecto"
+        )
+    with col_variante:
+        variante = st.segmented_control(
+            t("claude.variante"),
+            ["A", "B"],
+            default="A",
+            required=True,
+            format_func=lambda v: t(f"claude.variante.{v}"),
+            key="claude_variante",
+        )
+    proyecto = por_slug[slug]
+    with col_nueva, st.container(horizontal=True, horizontal_alignment="right"):
+        if st.button(t("claude.nueva"), icon=":material/add_comment:", key="claude_nueva"):
+            st.session_state["claude_conv"][slug] = {"mensajes": [], "respuestas": {}}
+
+    # Lo que la Lanzadera ya sabe del proyecto, encima del chat: estado y tablero.
+    activo = esta_activo(proyecto)
+    col_estado, col_github = st.columns([1, 3])
+    if activo is not None:
+        col_estado.markdown(t("claude.activo") if activo else t("claude.parado"))
+    _pintar_github(col_github, proyecto["path_github"])
+
+    conv = _conversacion_claude(slug)
+    if not conv["mensajes"]:
+        tablero = _tablero_de(proyecto["path_github"])
+        cuenta = _recuentos(_tableros()).get(tablero) if tablero else None
+        st.pills(
+            t("claude.sugerencias"),
+            claude.sugerencias(activo, cuenta, _idioma()),
+            key=f"claude_sugerencia_{slug}",
+            on_change=_elegir_sugerencia,
+            args=(slug,),
+        )
+    pendiente = _pintar_conversacion(slug, conv, variante)
+
+    esperando_boton = variante == "A" and pendiente is not None
+    if prompt := st.chat_input(
+        t("claude.entrada", proyecto=proyecto["nombre"]), disabled=esperando_boton, key=f"claude_entrada_{slug}"
+    ):
+        if pendiente is not None:
+            conv["respuestas"][pendiente] = prompt
+        else:
+            conv["mensajes"] += [{"rol": "usuario", "texto": prompt}, {"rol": "claude", "texto": t("claude.eco")}]
+        st.rerun()
+
+
 with st.sidebar:
     pagina = st.radio(t("menu"), MENU, key="pagina", format_func=lambda p: t(f"pagina.{p}"))
     st.segmented_control(
@@ -1487,5 +1619,7 @@ elif pagina == "Enlaces":
     render_enlaces()
 elif pagina == "VPS":
     render_vps()
+elif pagina == "Claude":
+    render_claude()
 else:
     render_local()

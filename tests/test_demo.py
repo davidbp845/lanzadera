@@ -16,7 +16,7 @@ import vps
 from config import paths
 
 APP = str(Path(__file__).parent.parent / "app.py")
-PAGINAS = ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
+PAGINAS = ["Lanzadera", "ADR", "Enlaces", "VPS", "Local", "Claude"]
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ def test_las_paginas_de_la_demo_no_ejecutan_nada(modo_demo, monkeypatch, pagina,
 def test_la_demo_empieza_en_ingles_con_los_interruptores_deshabilitados(modo_demo):
     at = _abrir()
     assert at.title[0].value == "Launchpad"
-    assert at.sidebar.radio(key="pagina").options == ["Launchpad", "ADRs", "Links", "VPS", "Local"]
+    assert at.sidebar.radio(key="pagina").options == ["Launchpad", "ADRs", "Links", "VPS", "Local", "Claude"]
     assert at.toggle and all(toggle.disabled for toggle in at.toggle)
 
 

@@ -162,7 +162,7 @@ def test_iniciar_espera_una_vez_cada_puerto_de_los_enlaces(lanzadera, monkeypatc
 
 
 def test_menu_sin_negocios(lanzadera):
-    assert _abrir().sidebar.radio[0].options == ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
+    assert _abrir().sidebar.radio[0].options == ["Lanzadera", "ADR", "Enlaces", "VPS", "Local", "Claude"]
 
 
 @pytest.fixture
