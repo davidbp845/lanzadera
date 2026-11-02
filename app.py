@@ -1455,15 +1455,46 @@ def render_adr() -> None:
     )
 
     opciones = {p["carpeta"]: (nombres_grupo, p) for nombres_grupo, p in grupos}
-    elegido = st.selectbox(
-        t("adr.proyecto"),
-        list(opciones),
-        format_func=lambda c: f"{' · '.join(opciones[c][0])} ({len(opciones[c][1]['adrs'])})",
-        key="adr_proyecto",
-        width=420,
-    )
-    proyecto = opciones[elegido][1]
+    with st.container(horizontal=True, vertical_alignment="bottom"):
+        elegido = st.selectbox(
+            t("adr.proyecto"),
+            list(opciones),
+            index=None,
+            placeholder=t("adr.todos"),
+            format_func=lambda c: f"{' · '.join(opciones[c][0])} ({len(opciones[c][1]['adrs'])})",
+            key="adr_proyecto",
+            width=420,
+        )
+        # Los estados que hay y, aparte, las aceptadas que aún tienen issues abiertos.
+        # OR entre las pastillas elegidas; ninguna, todas.
+        seleccion = st.pills(
+            t("adr.filtros"),
+            [*claves, "en_curso"],
+            selection_mode="multi",
+            format_func=lambda o: t("adr.filtro.en_curso") if o == "en_curso" else _nombre_estado(o),
+            label_visibility="collapsed",
+            key="adr_filtros",
+            width="content",
+        )
+
+    def _pasa(f: dict) -> bool:
+        if not seleccion:
+            return True
+        en_curso = f["estado"] == "Aceptada" and f["implementacion"] == "en_curso"
+        return f["estado"] in seleccion or ("en_curso" in seleccion and en_curso)
+
+    visibles = [
+        (nombres_grupo, p, f)
+        for nombres_grupo, p in grupos
+        if elegido is None or p["carpeta"] == elegido
+        for f in filas[p["carpeta"]]
+        if _pasa(f)
+    ]
+    # Descendente por issues abiertos y, a igualdad, por issues en total; sorted es estable,
+    # así que el empate conserva el orden de proyectos y de número.
+    visibles.sort(key=lambda v: (sum(bool(i["abierto"]) for i in v[2]["issues"]), len(v[2]["issues"])), reverse=True)
     textos_tabla = {
+        "proyecto": t("adr.col.proyecto"),
         "adr": t("adr.col.adr"),
         "decision": t("adr.col.decision"),
         "estado": t("adr.col.estado"),
@@ -1472,12 +1503,14 @@ def render_adr() -> None:
         "abierto": t("adr.issue.abierto"),
         "cerrado": t("adr.issue.cerrado"),
     }
+    st.caption(t("adr.mostradas", n=len(visibles), total=total))
     st.html(
         graficos.tabla_adr(
             [
                 {
+                    "proyecto": graficos.etiqueta_tablero(nombres_grupo),
                     "numero": f["numero"],
-                    "url": f"{proyecto['url_carpeta']}/{f['fichero']}" if proyecto["url_carpeta"] else None,
+                    "url": f"{p['url_carpeta']}/{f['fichero']}" if p["url_carpeta"] else None,
                     "titulo": f["titulo"],
                     "estado": _nombre_estado(f["estado"]),
                     "color": graficos.COLORES_ADR[adrs.ESTADOS.index(f["estado"])] if f["estado"] else graficos.GRIS,
@@ -1485,9 +1518,10 @@ def render_adr() -> None:
                     "aviso": t("adr.aviso_propuesta") if f["revisar"] else "",
                     "issues": f["issues"],
                 }
-                for f in filas[elegido]
+                for nombres_grupo, p, f in visibles
             ],
             textos_tabla,
+            con_proyecto=elegido is None,
         )
     )
     st.caption(t("adr.leyenda_issues"))

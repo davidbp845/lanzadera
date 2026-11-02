@@ -27,6 +27,11 @@ TEXTOS = {
         "adr.aviso_propuesta": "Propuesta con todos sus issues cerrados: ¿pasa a Aceptada?",
         "adr.cuentas": "**{propuestas}** propuestas sin decidir · **{en_curso}** aceptadas con issues abiertos",
         "adr.proyecto": "Proyecto",
+        "adr.todos": "Todos los proyectos",
+        "adr.filtros": "Filtrar por estado",
+        "adr.filtro.en_curso": "Aceptadas con issues abiertos",
+        "adr.mostradas": "{n} de {total} ADR · de más a menos issues abiertos",
+        "adr.col.proyecto": "Proyecto",
         "adr.leyenda_issues": (
             "Issues: punto relleno, abierto; hueco, cerrado. El estado se lee de GitHub con `gh`; sin respuesta, "
             "solo el número."
@@ -185,6 +190,11 @@ TEXTOS = {
         "adr.aviso_propuesta": "Proposed with all its issues closed: accept it?",
         "adr.cuentas": "**{propuestas}** proposals pending · **{en_curso}** accepted with open issues",
         "adr.proyecto": "Project",
+        "adr.todos": "All projects",
+        "adr.filtros": "Filter by status",
+        "adr.filtro.en_curso": "Accepted with open issues",
+        "adr.mostradas": "{n} of {total} ADRs · most open issues first",
+        "adr.col.proyecto": "Project",
         "adr.leyenda_issues": (
             "Issues: filled dot, open; hollow, closed. The status is read from GitHub with `gh`; without an "
             "answer, just the number."

@@ -307,16 +307,18 @@ def _issue(issue: dict, titulos: dict[str, str]) -> str:
     )
 
 
-def tabla_adr(filas: list[dict], textos: dict[str, str]) -> str:
-    """Tabla de las ADR de un proyecto: número (enlace al fichero), decisión, estado, implementación e issues.
+def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = False) -> str:
+    """Tabla de ADR: proyecto (con `con_proyecto`), número (enlace al fichero), decisión, estado,
+    implementación e issues.
 
-    Cada fila: `numero`, `url`, `titulo`, `estado` (texto ya traducido), `color`, `implementacion`,
-    `aviso` e `issues` (`ref`, `url`, `abierto`). `textos` da las cabeceras y los tooltips.
+    Cada fila: `proyecto`, `numero`, `url`, `titulo`, `estado` (texto ya traducido), `color`,
+    `implementacion`, `aviso` e `issues` (`ref`, `url`, `abierto`). `textos` da las cabeceras y los tooltips.
     """
     celda = "padding:8px 12px;vertical-align:top"
+    columnas = ("proyecto",) * con_proyecto + ("adr", "decision", "estado", "implementacion", "issues")
     cabecera = "".join(
         f'<th scope="col" style="{celda};font-weight:600;text-align:left">{html.escape(textos[c])}</th>'
-        for c in ("adr", "decision", "estado", "implementacion", "issues")
+        for c in columnas
     )
     cuerpo = []
     for f in filas:
@@ -325,8 +327,10 @@ def tabla_adr(filas: list[dict], textos: dict[str, str]) -> str:
             numero = f'<a href="{html.escape(f["url"])}" target="_blank">{numero}</a>'
         aviso = f'<div style="color:#8a420b;font-size:0.85rem">⚠ {html.escape(f["aviso"])}</div>' if f["aviso"] else ""
         issues = "".join(_issue(i, textos) for i in f["issues"]) or f'<span style="color:{TEXTO_SUAVE}">—</span>'
+        proyecto = f'<td style="{celda}">{html.escape(f["proyecto"])}</td>' if con_proyecto else ""
         cuerpo.append(
             '<tr style="border-top:1px solid rgba(49,51,63,0.1)">'
+            f"{proyecto}"
             f"<td style=\"{celda};font-family:'Source Code Pro',monospace;font-size:0.85rem\">{numero}</td>"
             f'<td style="{celda}">{html.escape(f["titulo"])}{aviso}</td>'
             f'<td style="{celda}">{_pildora(f["estado"], f["color"])}</td>'

@@ -77,6 +77,20 @@ def test_los_graficos_siguen_plegados_al_volver_de_otra_pagina(modo_demo):
     assert len(at.get("vega_lite_chart")) == 2
 
 
+def test_la_tabla_de_adr_muestra_todas_y_filtra_por_estado(modo_demo):
+    at = _abrir("ADR")
+    assert at.selectbox(key="adr_proyecto").value is None
+    tabla = at.get("html")[-1].proto.body
+    assert ">Project</th>" in tabla
+    # De más a menos issues abiertos: las de un issue abierto van antes que las sin issues.
+    assert tabla.index("Rules valid per year") < tabla.index("CSV files as storage")
+    at.pills(key="adr_filtros").set_value(["en_curso"]).run()
+    tabla = at.get("html")[-1].proto.body
+    assert "Rules valid per year" in tabla
+    assert "Batch export to the phone" not in tabla
+    assert "Archive what's resolved" not in tabla
+
+
 def test_las_tarjetas_de_adr_se_pliegan_juntas_con_su_resumen(modo_demo):
     at = _abrir("ADR")
     at.button(key="plegar_adr_revisar").click().run()
