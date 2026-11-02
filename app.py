@@ -61,12 +61,13 @@ INTENTOS_ESPERA_NEGOCIOS = REGISTRO["intentos_negocios"]
 HERUKA_LIFE_SINGLE = REGISTRO["heruka_life_single"]
 # Sin `[negocios]` en el registro no hay filas de negocios ni nada de heruka-flow en el panel.
 CON_NEGOCIOS = HERUKA_FLOW is not None
-# Carpetas de las que se leen GitHub y la actividad: los proyectos y, si lo hay, heruka-flow
-# (las de los negocios multi-tenant se suman en cada consulta: salen de `dev_up.sh --listar`).
-RUTAS_REPOS = [p["path"] for p in PROYECTOS] + ([HERUKA_FLOW] if CON_NEGOCIOS else [])
+# Carpetas de las que se leen GitHub y la actividad: la de cada proyecto (`ruta_github` o `ruta`)
+# y, si lo hay, heruka-flow (las de los negocios se suman en cada consulta: dependen de
+# `dev_up.sh --listar`).
+RUTAS_REPOS = [p["path_github"] for p in PROYECTOS] + ([HERUKA_FLOW] if CON_NEGOCIOS else [])
 ENLACES_CSV = paths.enlaces()
 # En la demo, el GitHub de cada proyecto se busca por su slug en demo/estado.toml.
-SLUG_POR_RUTA = {str(p["path"]): p["slug"] for p in PROYECTOS} | (
+SLUG_POR_RUTA = {str(p["path_github"]): p["slug"] for p in PROYECTOS} | (
     {str(HERUKA_FLOW): "negocios"} if CON_NEGOCIOS else {}
 )
 
@@ -433,7 +434,7 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
     if proyecto["puerto"] is None and not proyecto["proceso"]:
         for columna in (puerto, estado, enlaces, interruptor):
             columna.markdown(":gray[—]")
-        _pintar_github(enlaces_github, proyecto["path"])
+        _pintar_github(enlaces_github, proyecto["path_github"])
         return
     # Sin puerto pero con proceso (ADR-0017): estado e interruptor, sin puerto ni enlace que abrir.
     puerto.markdown(":gray[—]" if proyecto["puerto"] is None else str(proyecto["puerto"]))
@@ -450,7 +451,7 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
             [(enlace[0], url_enlace(enlace)) for enlace in lista],
         )
 
-    _pintar_github(enlaces_github, proyecto["path"])
+    _pintar_github(enlaces_github, proyecto["path_github"])
 
     with interruptor:
         if proyecto["cmd"] is None:
@@ -483,10 +484,15 @@ def _carpeta_negocio(negocio: dict) -> Path:
 
 
 def _carpetas_negocios() -> list[tuple[str, Path]]:
-    """`(nombre, carpeta)` de cada negocio multi-tenant, para GitHub y la actividad."""
+    """`(nombre, carpeta)` de cada negocio, para GitHub, la actividad y los ADR.
+
+    Con multi-tenant, la de cada negocio; sin él, la de la fila `[negocios.single]`.
+    """
     if not CON_NEGOCIOS:
         return []
-    return [(t("negocio", id=n["id"]), _carpeta_negocio(n)) for n in listar_negocios()]
+    if negocios := listar_negocios():
+        return [(t("negocio", id=n["id"]), _carpeta_negocio(n)) for n in negocios]
+    return [(HERUKA_LIFE_SINGLE["nombre"], HERUKA_LIFE_SINGLE["path_github"])]
 
 
 def _puertos_negocio(negocio: dict) -> list[int]:
@@ -594,7 +600,7 @@ def _filas_lanzadera() -> list[dict]:
                 "carpeta": _carpeta_raiz(proyecto),
                 "activo": activo,
                 "tipo": proyecto["tipo"],
-                "tablero": _github(str(proyecto["path"]))[1],
+                "tablero": _github(str(proyecto["path_github"]))[1],
                 "pintar": lambda proyecto=proyecto, activo=activo: _render_proyecto(proyecto, activo),
             }
         )
@@ -612,7 +618,7 @@ def _filas_lanzadera() -> list[dict]:
                 "carpeta": carpeta,
                 "activo": activo,
                 "tipo": TIPO_NEGOCIOS,
-                "tablero": _github(str(HERUKA_LIFE_SINGLE["path"]))[1],
+                "tablero": _github(str(HERUKA_LIFE_SINGLE["path_github"]))[1],
                 "pintar": lambda: _render_proyecto(HERUKA_LIFE_SINGLE, activo),
             }
         )
@@ -670,7 +676,7 @@ def _issues_por_proyecto() -> list[tuple[list[str], dict[str, int]]]:
     """`(nombres, cuenta)` por tablero: cada tablero cuenta una vez, con todos los proyectos que lo comparten."""
     recuentos = _recuentos(_tableros())
     por_tablero: dict[tuple[str, int], list[str]] = {}
-    nombres_y_rutas = [(p["nombre"], p["path"]) for p in PROYECTOS] + _carpetas_negocios()
+    nombres_y_rutas = [(p["nombre"], p["path_github"]) for p in PROYECTOS] + _carpetas_negocios()
     if CON_NEGOCIOS:
         nombres_y_rutas.append((t("todos_negocios"), HERUKA_FLOW))
     for nombre, ruta in nombres_y_rutas:
@@ -1281,9 +1287,9 @@ def render_local() -> None:
 @st.cache_data(ttl=3600, show_spinner=False)
 def _adrs_por_carpeta() -> list[tuple[list[str], dict]]:
     """`(nombres, proyecto)` por carpeta de ADR: las filas que comparten carpeta cuentan una vez."""
-    nombres_y_rutas = [(p["nombre"], p["path"]) for p in PROYECTOS]
+    nombres_y_rutas = [(p["nombre"], p["path_github"]) for p in PROYECTOS] + _carpetas_negocios()
     if CON_NEGOCIOS:
-        nombres_y_rutas.append((HERUKA_LIFE_SINGLE["nombre"], HERUKA_FLOW))
+        nombres_y_rutas.append((t("todos_negocios"), HERUKA_FLOW))
     por_carpeta: dict[str, tuple[list[str], dict]] = {}
     for nombre, ruta in nombres_y_rutas:
         proyecto = demo.adrs(SLUG_POR_RUTA.get(str(ruta), "")) if DEMO else adrs.del_proyecto(Path(ruta))

@@ -28,4 +28,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0018](0018-lanzadera-en-macos.md) | Lanzadera en macOS: puertos sin root proceso a proceso, LaunchAgent, `stop.sh` con `psutil`, contenedor propio de cada persona y máquina | Propuesta |
 | [0019](0019-perfil-de-usuario-final.md) | Perfil de usuario final (`HOME_LAUNCHER_PERFIL=usuario`): misma aplicación, sin gráficos, GitHub, VPS ni Local | Propuesta |
 | [0020](0020-pagina-adr-estado-de-las-decisiones.md) | Página ADR: estado de las decisiones leído de `doc/A2-ADR/` de cada proyecto; la implementación, de sus issues | Aceptada |
-| [0021](0021-github-de-la-carpeta-del-repositorio.md) | GitHub de cada fila desde la carpeta de su repositorio: cada negocio, la suya; clave `ruta_github` para los proyectos que arrancan desde otra carpeta | Propuesta |
+| [0021](0021-github-de-la-carpeta-del-repositorio.md) | GitHub de cada fila desde la carpeta de su repositorio: cada negocio, la suya; clave `ruta_github` para los proyectos que arrancan desde otra carpeta | Aceptada |

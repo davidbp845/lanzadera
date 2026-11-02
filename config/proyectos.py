@@ -12,6 +12,8 @@ def _proyecto(entrada: dict, raiz: Path) -> dict:
     proyecto = {
         **entrada,
         "path": raiz / entrada["ruta"],
+        # Repositorio y tablero: los de `ruta_github` si el proyecto se arranca desde el código de otro (ADR-0021).
+        "path_github": raiz / entrada.get("ruta_github", entrada["ruta"]),
         "cmd": entrada.get("cmd"),
         "puerto": entrada.get("puerto"),
         "proceso": entrada.get("proceso"),

@@ -15,6 +15,7 @@ Cargado por `config/proyectos.py:cargar()`. Las rutas son relativas a la carpeta
 | `puerto` | entero | no | Puerto principal: el que decide el semáforo. Sin él ni `proceso`, el proyecto no tiene app: su fila es solo de enlaces de GitHub, sin estado ni interruptor, y no entra en Local ([ADR-0014](../A2-ADR/0014-proyectos-sin-app-solo-enlaces.md)) |
 | `proceso` | texto | no | Para un proyecto sin `puerto` que corre igualmente (un script residente): texto de la línea de comando de su proceso, p. ej. el nombre del script. Está activo si algún proceso lo contiene; tiene interruptor y entra en Local, sin enlaces ([ADR-0017](../A2-ADR/0017-lanzadera-en-windows-y-proyectos-sin-puerto.md)). Tiene que ser específico: uno genérico (`python`) lo daría por activo con cualquier proceso |
 | `ruta` | texto | sí | Carpeta del proyecto, relativa a `Data`; `cwd` de `cmd` y `cmd_detener` |
+| `ruta_github` | texto | no | Carpeta del repositorio, relativa a `Data`, cuando no es `ruta` (un proyecto que se arranca desde el código de otro). De ella salen el repositorio, el tablero, la actividad y los ADR de la fila; sin ella, de `ruta` ([ADR-0021](../A2-ADR/0021-github-de-la-carpeta-del-repositorio.md)) |
 | `tipo` | texto | no | Framework principal de la app (`Streamlit`, `Astro`, `Wagtail`…), el del servicio del puerto principal. Cada valor distinto es una píldora de tipo en la Lanzadera; se muestra tal cual, así que `streamlit` y `Streamlit` serían dos ([ADR-0015](../A2-ADR/0015-tipo-de-aplicacion-en-el-registro.md)) |
 | `cmd` | lista | no | Comando de arranque. Sin él, la fila es esta misma app (no se para desde sí misma) |
 | `cmd_detener` | lista | no | Comando de parada. Sin él, se para a quien escucha `puerto` o a los procesos de `proceso`: `SIGTERM` a su grupo en Linux, su árbol de procesos en Windows |
@@ -30,11 +31,11 @@ Opcionales: solo tienen sentido con heruka-flow. Sin `[negocios]`, la Lanzadera 
 
 - `negocios.ruta`: carpeta de heruka-flow, donde se ejecutan `dev_up.sh`/`dev_down.sh`.
 - `negocios.intentos_espera_inicio`: margen de arranque de cada negocio.
-- `negocios.single`: un `[[proyecto]]` más, que sale como fila de negocio en la Lanzadera solo si heruka-flow no tiene negocios multi-tenant.
+- `negocios.single`: un `[[proyecto]]` más (con `ruta_github` si su repositorio no es heruka-flow), que sale como fila de negocio en la Lanzadera solo si heruka-flow no tiene negocios multi-tenant.
 
 Las filas de negocios, multi-tenant o single, son tipo `heruka-flow` sin escribirlo en el registro.
 
-En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta), `puerto`, `cmd` y `tipo` (`None` si faltan) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
+En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta), `path_github` (la de `ruta_github` o, sin ella, `path`), `puerto`, `cmd` y `tipo` (`None` si faltan) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
 
 ## Enlaces — `datos/enlaces.csv`
 

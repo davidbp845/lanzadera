@@ -23,6 +23,15 @@ def test_resuelve_las_rutas_contra_la_raiz_data(registro):
     assert registro["heruka_flow"] == RAIZ / "Otros/negocios"
 
 
+@pytest.mark.parametrize(
+    ("fila", "carpeta"),
+    [(lambda r: r["proyectos"][1], "Apps/simple"), (lambda r: r["heruka_life_single"], "Otros/unico")],
+    ids=["sin_ruta_github", "con_ruta_github"],
+)
+def test_github_sale_de_ruta_github_o_de_ruta(registro, fila, carpeta):
+    assert fila(registro)["path_github"] == RAIZ / carpeta
+
+
 def test_sin_cmd_es_esta_app(registro):
     assert registro["proyectos"][0]["cmd"] is None
 
