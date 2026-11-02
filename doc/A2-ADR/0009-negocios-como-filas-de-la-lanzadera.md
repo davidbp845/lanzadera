@@ -42,4 +42,4 @@ Lo que hace la página Negocios no cambia: la lista y los puertos los da `dev_up
 
 ## Estado
 
-Aceptada (2026-10-27). Implementación: [#7](https://github.com/davidbp845/home/issues/7). La píldora **Negocios**, superada por [ADR-0015](0015-tipo-de-aplicacion-en-el-registro.md).
+Aceptada (2026-10-27). Implementación: [#7](https://github.com/davidbp845/home/issues/7). La píldora **Negocios**, superada por [ADR-0015](0015-tipo-de-aplicacion-en-el-registro.md); el punto **GitHub**, por [ADR-0021](0021-github-de-la-carpeta-del-repositorio.md).

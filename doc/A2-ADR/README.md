@@ -16,7 +16,7 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0006](0006-el-launcher-como-servicio-de-systemd.md) | El launcher como servicio de usuario de systemd | Aceptada; en Windows, `start.cmd` desde Inicio (0017) |
 | [0007](0007-estructura-plana-sin-hexagonal.md) | Estructura plana (`app.py` + `config/`), sin hexagonal | Aceptada |
 | [0008](0008-pagina-vps-estado-por-ssh-bajo-demanda.md) | Página VPS: estado por SSH bajo demanda, servidores en `datos/vps.toml` | Aceptada |
-| [0009](0009-negocios-como-filas-de-la-lanzadera.md) | Negocios como filas de la Lanzadera, sin página propia | Aceptada; la píldora Negocios, superada por 0015 |
+| [0009](0009-negocios-como-filas-de-la-lanzadera.md) | Negocios como filas de la Lanzadera, sin página propia | Aceptada; la píldora Negocios, superada por 0015; el GitHub de los negocios, por 0021 |
 | [0010](0010-demo-publica-de-solo-lectura.md) | Demo pública de solo lectura con datos de ejemplo (`HOME_LAUNCHER_DEMO`) | Aceptada |
 | [0011](0011-licencia-mit.md) | Licencia MIT para el repo | Aceptada |
 | [0012](0012-lanzadera-sustituye-a-home.md) | El repo público `lanzadera` sustituye a `home`, que se archiva | Aceptada |
@@ -28,3 +28,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0018](0018-lanzadera-en-macos.md) | Lanzadera en macOS: puertos sin root proceso a proceso, LaunchAgent, `stop.sh` con `psutil`, contenedor propio de cada persona y máquina | Propuesta |
 | [0019](0019-perfil-de-usuario-final.md) | Perfil de usuario final (`HOME_LAUNCHER_PERFIL=usuario`): misma aplicación, sin gráficos, GitHub, VPS ni Local | Propuesta |
 | [0020](0020-pagina-adr-estado-de-las-decisiones.md) | Página ADR: estado de las decisiones leído de `doc/A2-ADR/` de cada proyecto; la implementación, de sus issues | Aceptada |
+| [0021](0021-github-de-la-carpeta-del-repositorio.md) | GitHub de cada fila desde la carpeta de su repositorio: cada negocio, la suya; clave `ruta_github` para los proyectos que arrancan desde otra carpeta | Propuesta |
