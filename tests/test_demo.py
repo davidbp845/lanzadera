@@ -210,6 +210,31 @@ def test_etiqueta_de_un_tablero_compartido_se_resume_si_no_cabe(nombres, maximo,
     assert graficos.etiqueta_tablero(nombres, maximo) == esperado
 
 
+def test_tabla_de_adr_ordenable_por_adr_decision_estado_e_implementacion():
+    fila = {
+        "proyecto": "Acme",
+        "numero": "0007",
+        "url": None,
+        "titulo": "Usar <SQLite>",
+        "estado": "Aceptada",
+        "color": "#000",
+        "implementacion": "En curso",
+        "orden_estado": 1,
+        "orden_implementacion": 1,
+        "aviso": "",
+        "issues": [],
+    }
+    textos_tabla = {c: c for c in ("proyecto", "adr", "decision", "estado", "implementacion", "issues")}
+    tabla = graficos.tabla_adr([fila, {**fila, "numero": "0002"}], textos_tabla, con_proyecto=True)
+
+    assert tabla.count("data-tipo=") == 4
+    assert '<th scope="col" style' in tabla  # proyecto e issues no se ordenan
+    assert 'data-i="0"' in tabla and 'data-i="1"' in tabla  # el orden inicial, para volver a él
+    assert 'data-orden="7"' in tabla and 'data-orden="2"' in tabla
+    assert 'data-orden="Usar &lt;SQLite&gt;"' in tabla
+    assert "<script>" in tabla
+
+
 def test_actualizar_tableros_refresca_tambien_el_grafico(modo_demo, monkeypatch):
     llamadas = []
 

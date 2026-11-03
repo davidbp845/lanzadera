@@ -1521,6 +1521,13 @@ def render_adr() -> None:
                     "estado": _nombre_estado(f["estado"]),
                     "color": graficos.COLORES_ADR[adrs.ESTADOS.index(f["estado"])] if f["estado"] else graficos.GRIS,
                     "implementacion": t(f"adr.impl.{f['implementacion']}") if f["implementacion"] else "—",
+                    # Lo que no tiene estado o implementación conocidos va al final al ordenar.
+                    "orden_estado": adrs.ESTADOS.index(f["estado"]) if f["estado"] else len(adrs.ESTADOS),
+                    "orden_implementacion": (
+                        adrs.IMPLEMENTACIONES.index(f["implementacion"])
+                        if f["implementacion"]
+                        else len(adrs.IMPLEMENTACIONES)
+                    ),
                     "aviso": t("adr.aviso_propuesta") if f["revisar"] else "",
                     "issues": f["issues"],
                 }
@@ -1528,7 +1535,8 @@ def render_adr() -> None:
             ],
             textos_tabla,
             con_proyecto=elegido is None,
-        )
+        ),
+        unsafe_allow_javascript=True,
     )
     st.caption(t("adr.leyenda_issues"))
 

@@ -307,23 +307,84 @@ def _issue(issue: dict, titulos: dict[str, str]) -> str:
     )
 
 
+# Ordena la tabla en el navegador: sin rerun, y solo reordena las filas ya filtradas.
+# st.html inserta el script en el documento principal, que persiste entre páginas y reruns:
+# va en una IIFE y solo liga las tablas que aún no tienen el atributo `data-ligada`.
+_ORDENAR_ADR = """<script>
+(function() {
+  document.querySelectorAll('table.tabla-adr:not([data-ligada])').forEach(function(tabla) {
+    tabla.dataset.ligada = '1';
+    var cuerpo = tabla.tBodies[0];
+    var cabeceras = tabla.querySelectorAll('th[data-tipo]');
+    var activa = null, sentido = 0;
+    function clave(fila, columna, tipo) {
+      var valor = fila.cells[columna].dataset.orden;
+      return tipo === 'texto' ? valor : Number(valor);
+    }
+    cabeceras.forEach(function(th) {
+      th.querySelector('button').addEventListener('click', function() {
+        // Ascendente, descendente y vuelta al orden inicial.
+        sentido = activa === th ? (sentido === 1 ? -1 : 0) : 1;
+        activa = sentido ? th : null;
+        var columna = th.cellIndex, tipo = th.dataset.tipo;
+        var filas = Array.prototype.slice.call(cuerpo.rows);
+        filas.sort(function(a, b) {
+          var d = 0;
+          if (sentido) {
+            var ka = clave(a, columna, tipo), kb = clave(b, columna, tipo);
+            d = tipo === 'texto' ? ka.localeCompare(kb, undefined, {numeric: true, sensitivity: 'base'}) : ka - kb;
+          }
+          // A igualdad, el orden inicial.
+          return d * sentido || a.dataset.i - b.dataset.i;
+        });
+        filas.forEach(function(f) { cuerpo.appendChild(f); });
+        cabeceras.forEach(function(otra) {
+          var propia = otra === activa;
+          otra.setAttribute('aria-sort', propia ? (sentido === 1 ? 'ascending' : 'descending') : 'none');
+          otra.querySelector('.flecha').textContent = propia ? (sentido === 1 ? '\u25b2' : '\u25bc') : '\u2195';
+          otra.querySelector('.flecha').style.opacity = propia ? '1' : '0.45';
+        });
+      });
+    });
+  });
+})();
+</script>"""
+
+
 def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = False) -> str:
     """Tabla de ADR: proyecto (con `con_proyecto`), número (enlace al fichero), decisión, estado,
-    implementación e issues.
+    implementación e issues. Las columnas ADR, decisión, estado e implementación se ordenan con un
+    clic en la cabecera (ascendente, descendente, orden inicial); el inicial es el de `filas`.
 
     Cada fila: `proyecto`, `numero`, `url`, `titulo`, `estado` (texto ya traducido), `color`,
-    `implementacion`, `aviso` e `issues` (`ref`, `url`, `abierto`). `textos` da las cabeceras y los tooltips.
+    `implementacion` (texto ya traducido), `orden_estado` y `orden_implementacion` (enteros por los
+    que se ordenan esas columnas), `aviso` e `issues` (`ref`, `url`, `abierto`). `textos` da las cabeceras y los tooltips.
     """
     celda = "padding:8px 12px;vertical-align:top"
     columnas = ("proyecto",) * con_proyecto + ("adr", "decision", "estado", "implementacion", "issues")
-    cabecera = "".join(
-        # Cabecera fija: la tabla hace scroll dentro de su caja.
-        f'<th scope="col" style="{celda};font-weight:600;text-align:left;position:sticky;top:0;'
-        f'background:#F7F8FA">{html.escape(textos[c])}</th>'
-        for c in columnas
+    tipos = {"adr": "numero", "decision": "texto", "estado": "numero", "implementacion": "numero"}
+    boton = (
+        "background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;"
+        "display:inline-flex;gap:4px;align-items:center;white-space:nowrap"
     )
+
+    def _cabecera(c: str) -> str:
+        texto = html.escape(textos[c])
+        if c in tipos:
+            texto = (
+                f'<button type="button" style="{boton}">{texto}'
+                '<span class="flecha" aria-hidden="true" style="opacity:0.45">↕</span></button>'
+            )
+        orden = f' data-tipo="{tipos[c]}" aria-sort="none"' if c in tipos else ""
+        # Cabecera fija: la tabla hace scroll dentro de su caja.
+        return (
+            f'<th scope="col"{orden} style="{celda};font-weight:600;text-align:left;position:sticky;top:0;'
+            f'background:#F7F8FA">{texto}</th>'
+        )
+
+    cabecera = "".join(_cabecera(c) for c in columnas)
     cuerpo = []
-    for f in filas:
+    for i, f in enumerate(filas):
         numero = html.escape(f["numero"])
         if f["url"]:
             numero = f'<a href="{html.escape(f["url"])}" target="_blank">{numero}</a>'
@@ -331,20 +392,22 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
         issues = "".join(_issue(i, textos) for i in f["issues"]) or f'<span style="color:{TEXTO_SUAVE}">—</span>'
         proyecto = f'<td style="{celda}">{html.escape(f["proyecto"])}</td>' if con_proyecto else ""
         cuerpo.append(
-            '<tr style="border-top:1px solid rgba(49,51,63,0.1)">'
+            f'<tr data-i="{i}" style="border-top:1px solid rgba(49,51,63,0.1)">'
             f"{proyecto}"
-            f"<td style=\"{celda};font-family:'Source Code Pro',monospace;font-size:0.85rem\">{numero}</td>"
-            f'<td style="{celda}">{html.escape(f["titulo"])}{aviso}</td>'
-            f'<td style="{celda}">{_pildora(f["estado"], f["color"])}</td>'
-            f'<td style="{celda};white-space:nowrap">{html.escape(f["implementacion"])}</td>'
+            f'<td data-orden="{int(f["numero"]) if f["numero"].isdigit() else 0}" '
+            f"style=\"{celda};font-family:'Source Code Pro',monospace;font-size:0.85rem\">{numero}</td>"
+            f'<td data-orden="{html.escape(f["titulo"])}" style="{celda}">{html.escape(f["titulo"])}{aviso}</td>'
+            f'<td data-orden="{f["orden_estado"]}" style="{celda}">{_pildora(f["estado"], f["color"])}</td>'
+            f'<td data-orden="{f["orden_implementacion"]}" style="{celda};white-space:nowrap">{html.escape(f["implementacion"])}</td>'
             f'<td style="{celda}"><div style="display:flex;flex-wrap:wrap;gap:4px">{issues}</div></td>'
             "</tr>"
         )
     return (
         '<div style="overflow:auto;max-height:60vh;border:1px solid rgba(49,51,63,0.15);border-radius:0.5rem">'
-        '<table style="width:100%;min-width:640px;border-collapse:collapse;font-size:0.9rem">'
+        '<table class="tabla-adr" style="width:100%;min-width:640px;border-collapse:collapse;font-size:0.9rem">'
         f'<thead><tr style="background:#F7F8FA;color:{TEXTO_SUAVE};font-size:0.85rem">{cabecera}</tr></thead>'
         f"<tbody>{''.join(cuerpo)}</tbody></table></div>"
+        f"{_ORDENAR_ADR}"
     )
 
 

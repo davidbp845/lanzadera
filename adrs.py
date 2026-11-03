@@ -11,6 +11,8 @@ from pathlib import Path
 import github
 
 ESTADOS = ["Propuesta", "Aceptada", "Superada", "Rechazada"]
+# Del principio al final del trabajo: el orden de la columna Implementación.
+IMPLEMENTACIONES = ["pendiente", "en_curso", "hecha"]
 CARPETA = Path("doc") / "A2-ADR"
 
 FICHERO = re.compile(r"^(\d{4})-.+\.md$")
