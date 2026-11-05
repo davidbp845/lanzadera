@@ -22,10 +22,11 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0012](0012-lanzadera-sustituye-a-home.md) | El repo público `lanzadera` sustituye a `home`, que se archiva | Aceptada |
 | [0013](0013-host-opcional-en-los-enlaces.md) | Host opcional en los enlaces de un proyecto (`admin.localhost`) | Aceptada |
 | [0014](0014-proyectos-sin-app-solo-enlaces.md) | Proyectos sin app: `puerto` opcional y fila de solo enlaces | Aceptada; sin `puerto` pero con `proceso`, ampliada por 0017 |
-| [0015](0015-tipo-de-aplicacion-en-el-registro.md) | Clave `tipo` en el registro y píldoras por tipo de aplicación (`heruka-flow` sustituye a Negocios) | Aceptada |
+| [0015](0015-tipo-de-aplicacion-en-el-registro.md) | Clave `tipo` en el registro y píldoras por tipo de aplicación (`heruka-flow` sustituye a Negocios) | Aceptada; varios tipos por proyecto, ampliada por 0022 (tipo por enlace) |
 | [0016](0016-latido-del-issue-en-curso.md) | Latido del issue en curso en el campo `Latido` del tablero: la pastilla In progress parpadea | Aceptada |
 | [0017](0017-lanzadera-en-windows-y-proyectos-sin-puerto.md) | Lanzadera en Windows: clave `proceso` para proyectos sin puerto, `psutil` en los dos sistemas, `start.cmd` desde Inicio | Aceptada |
 | [0018](0018-lanzadera-en-macos.md) | Lanzadera en macOS: puertos sin root proceso a proceso, LaunchAgent, `stop.sh` con `psutil`, contenedor propio de cada persona y máquina | Propuesta |
 | [0019](0019-perfil-de-usuario-final.md) | Perfil de usuario final (`HOME_LAUNCHER_PERFIL=usuario`): misma aplicación, sin gráficos, GitHub, VPS ni Local | Propuesta |
 | [0020](0020-pagina-adr-estado-de-las-decisiones.md) | Página ADR: estado de las decisiones leído de `doc/A2-ADR/` de cada proyecto; la implementación, de sus issues | Aceptada |
 | [0021](0021-github-de-la-carpeta-del-repositorio.md) | GitHub de cada fila desde la carpeta de su repositorio: cada negocio, la suya; clave `ruta_github` para los proyectos que arrancan desde otra carpeta | Aceptada |
+| [0022](0022-tipo-en-cada-enlace.md) | Clave `tipo` opcional en cada enlace: la fila sale con el tipo de cualquiera de sus enlaces y, con un filtro de tipo, solo muestra los enlaces de ese tipo | Aceptada |
