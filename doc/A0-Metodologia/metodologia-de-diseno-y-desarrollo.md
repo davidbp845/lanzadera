@@ -14,6 +14,8 @@ Es un guion de arranque, no una norma cerrada. Cada etapa se describe con:
 - **Columna de kanban** (proyecto GitHub #9, campo Status: Backlog/Ready/In progress/In review/Done)
 - **Skill/comando de Claude Code** si existe uno. Los `/dev:*` son los del método común (plugin `dev@metodo`), que toman los datos del proyecto de la sección `## Método` del `CLAUDE.md` del contenedor. Ese plugin es privado: no hace falta para usar ni desarrollar la app, y quien no lo tenga sigue las mismas etapas a mano.
 
+Los niveles A y C son los de la parte común de la metodología del método común (`plugins/dev/metodologia.md` de `dev@metodo`); como ese repo es privado, aquí se resumen con los ajustes de home. El nivel B es propio.
+
 ### Por qué estos tres niveles
 
 - **A — Visión y arquitectura**: hay una visión (un único sitio desde el que arrancar, parar y abrir todo lo local) y decisiones que merecen ADR (cómo se arranca y para cada proyecto, cómo se sabe si está activo, dónde vive el registro).
