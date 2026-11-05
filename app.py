@@ -419,16 +419,54 @@ def _pintar_enlaces(columna, enlaces: list[tuple[str, str]]) -> None:
         columna.markdown(" · ".join(f"[{etiqueta}]({url})" for etiqueta, url in enlaces))
 
 
-def _interruptor(key: str, on_change, **valor) -> None:
+def _interruptor(key: str, on_change, ayuda: str | None = None, deshabilitado: bool = False, **valor) -> None:
     st.toggle(
         "activo",
         key=key,
         on_change=on_change,
         label_visibility="collapsed",
-        disabled=DEMO,
-        help=t("demo.deshabilitado") if DEMO else None,
+        disabled=DEMO or deshabilitado,
+        help=t("demo.deshabilitado") if DEMO else ayuda,
         **valor,
     )
+
+
+def _con_interruptor(proyecto: dict) -> dict | None:
+    """El proyecto, si su fila lleva interruptor (ni esta app ni un proyecto sin app); si no, None."""
+    if proyecto["cmd"] is None or (proyecto["puerto"] is None and not proyecto["proceso"]):
+        return None
+    return proyecto
+
+
+def _interruptor_todos(visibles: list[dict]) -> None:
+    """Arranca o para de golpe las filas visibles con interruptor: proyectos y negocios."""
+    proyectos = [f for f in visibles if f.get("proyecto")]
+    negocios_visibles = {n["id"]: n for f in visibles for n in f.get("negocios", [])}
+    # Todas las filas de negocios comparten la lista y los activos de la misma consulta.
+    con_negocios = next((f for f in visibles if f.get("negocios")), None)
+    ids_activos = {n["id"] for n in con_negocios["negocios_activos"]} if con_negocios else set()
+    key = "switch_todos"
+    st.session_state[key] = bool(proyectos or negocios_visibles) and (
+        all(f["activo"] for f in proyectos) and set(negocios_visibles) <= ids_activos
+    )
+
+    def _on_change():
+        encender = st.session_state[key]
+        cambian = [f["proyecto"] for f in proyectos if bool(f["activo"]) != encender]
+        # iniciar() y detener() esperan a su puerto: en serie, varios proyectos serían minutos.
+        with ThreadPoolExecutor(max_workers=max(len(cambian), 1)) as hilos:
+            esperas = [hilos.submit(iniciar if encender else detener, proyecto) for proyecto in cambian]
+            if con_negocios:
+                todos = con_negocios["negocios_todos"]
+                ids = ids_activos | set(negocios_visibles) if encender else ids_activos - set(negocios_visibles)
+                if ids != ids_activos:
+                    # Un solo backend para todos: una sola relanzada con la selección final (ADR-0005).
+                    # En este hilo, que iniciar_negocios vacía una caché de Streamlit.
+                    iniciar_negocios([n for n in todos if n["id"] in ids], todos)
+            for espera in esperas:
+                espera.result()
+
+    _interruptor(key, _on_change, ayuda=t("interruptor_todos"), deshabilitado=not (proyectos or negocios_visibles))
 
 
 def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
@@ -607,6 +645,7 @@ def _filas_lanzadera() -> list[dict]:
                 "activo": activo,
                 "tipo": proyecto["tipo"],
                 "tablero": _tablero_de(proyecto["path_github"]),
+                "proyecto": _con_interruptor(proyecto),
                 "pintar": lambda proyecto=proyecto, activo=activo: _render_proyecto(proyecto, activo),
             }
         )
@@ -644,12 +683,15 @@ def _filas_lanzadera() -> list[dict]:
                 "activo": activo,
                 "tipo": TIPO_NEGOCIOS,
                 "tablero": _tablero_de(HERUKA_LIFE_SINGLE["path_github"]),
+                "proyecto": _con_interruptor(HERUKA_LIFE_SINGLE),
                 "pintar": lambda: _render_proyecto(HERUKA_LIFE_SINGLE, activo),
             }
         )
         return filas
 
     activos = [n for n in negocios if negocio_activo(n)]
+    # Para el interruptor de la cabecera: qué negocios cubre cada fila y la selección de partida.
+    de_negocios = {"negocios_todos": negocios, "negocios_activos": activos}
     filas.append(
         {
             "texto": f"{t('todos_negocios')} " + " ".join(n["id"] for n in negocios),
@@ -657,6 +699,8 @@ def _filas_lanzadera() -> list[dict]:
             "activo": bool(activos),
             "tipo": TIPO_NEGOCIOS,
             "tablero": _github(str(HERUKA_FLOW))[1],
+            "negocios": negocios,
+            **de_negocios,
             "pintar": lambda: _render_negocios_todos(negocios, activos),
         }
     )
@@ -668,6 +712,8 @@ def _filas_lanzadera() -> list[dict]:
                 "activo": negocio in activos,
                 "tipo": TIPO_NEGOCIOS,
                 "tablero": _github(str(_carpeta_negocio(negocio)))[1],
+                "negocios": [negocio],
+                **de_negocios,
                 "pintar": lambda negocio=negocio: _render_negocio(negocio, negocios, activos),
             }
         )
@@ -892,12 +938,15 @@ def render_proyectos() -> None:
     )
     with st.container(key="tabla_lanzadera"):
         with st.container(key="cabecera_lanzadera"):
+            *columnas, interruptor = st.columns(COLUMNAS_LANZADERA, vertical_alignment="center")
             for columna, titulo in zip(
-                st.columns(COLUMNAS_LANZADERA),
-                [t("col.proyecto_app"), t("col.puerto"), t("col.estado"), t("col.enlaces"), t("col.github"), ""],
+                columnas,
+                [t("col.proyecto_app"), t("col.puerto"), t("col.estado"), t("col.enlaces"), t("col.github")],
                 strict=True,
             ):
-                columna.markdown(f"**{titulo}**" if titulo else "")
+                columna.markdown(f"**{titulo}**")
+            with interruptor:
+                _interruptor_todos(visibles)
         for i, fila in enumerate(visibles):
             with st.container(key=f"fila_{'impar' if i % 2 else 'par'}_{i}"):
                 fila["pintar"]()

@@ -31,7 +31,7 @@ def lanzadera(monkeypatch):
         return run_real(cmd, *args, **kwargs)
 
     def popen(cmd, *args, **kwargs):
-        if cmd[0] in {"./scripts/dev_up.sh", "./up.sh"}:
+        if cmd[0] in {"./scripts/dev_up.sh", "./up.sh", "./start.sh"}:
             llamadas.append(cmd)
             return None
         return popen_real(cmd, *args, **kwargs)
@@ -161,6 +161,36 @@ def test_iniciar_espera_una_vez_cada_puerto_de_los_enlaces(lanzadera, monkeypatc
     assert comprobados.count(("127.0.0.1", 9504)) == 1
 
 
+@pytest.mark.parametrize(
+    ("buscar", "llamadas"),
+    [
+        (
+            "",
+            [
+                ["./scripts/dev_down.sh"],
+                ["./scripts/dev_up.sh", "--skip-checks", "--negocios", "a,b"],
+                ["./start.sh"],
+                ["./up.sh"],
+            ],
+        ),
+        ("multi", [["./up.sh"]]),
+        ("negocio b", [["./scripts/dev_down.sh"], ["./scripts/dev_up.sh", "--skip-checks", "--negocios", "b"]]),
+    ],
+)
+def test_el_interruptor_de_la_cabecera_arranca_las_filas_visibles(lanzadera, monkeypatch, buscar, llamadas):
+    at = _abrir(buscar)
+    monkeypatch.setattr(time, "sleep", lambda _segundos: None)
+    assert at.toggle(key="switch_todos").value is False
+    at.toggle(key="switch_todos").set_value(True).run()
+    assert not at.exception
+    # Los proyectos arrancan en paralelo: el orden entre ellos no está fijado; los negocios, una sola vez.
+    assert sorted(lanzadera.llamadas) == sorted(llamadas)
+
+
+def test_el_interruptor_de_la_cabecera_sin_filas_arrancables_esta_deshabilitado(lanzadera):
+    assert _abrir("docs").toggle(key="switch_todos").disabled
+
+
 def test_menu_sin_negocios(lanzadera):
     assert _abrir().sidebar.radio[0].options == ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
 
@@ -271,3 +301,14 @@ def test_adr_sin_proyectos_con_adr_lo_explica(lanzadera, monkeypatch, tmp_path):
     at.sidebar.radio(key="pagina").set_value("ADR").run()
     assert not at.exception
     assert at.info[0].value == "Ningún proyecto del registro tiene ADR en `doc/A2-ADR/`."
+
+
+def test_el_interruptor_de_la_cabecera_para_las_activas_visibles(con_proceso, monkeypatch):
+    con_proceso.filas = {700: (1, 0, "AutoHotkey64.exe atajos.ahk")}
+    at = _abrir()
+    at.button_group(key="filtros_lanzadera").set_value(["activo"]).run()
+    assert at.toggle(key="switch_todos").value is True
+    monkeypatch.setattr(time, "sleep", lambda _segundos: None)
+    at.toggle(key="switch_todos").set_value(False).run()
+    assert not at.exception
+    assert con_proceso.terminados == [700]
