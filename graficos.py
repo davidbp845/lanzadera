@@ -353,7 +353,7 @@ _ORDENAR_ADR = """<script>
 
 def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = False) -> str:
     """Tabla de ADR: proyecto (con `con_proyecto`), número (enlace al fichero), decisión, estado,
-    implementación e issues. Las columnas ADR, decisión, estado e implementación se ordenan con un
+    implementación e issues. Las columnas proyecto, ADR, decisión, estado e implementación se ordenan con un
     clic en la cabecera (ascendente, descendente, orden inicial); el inicial es el de `filas`.
 
     Cada fila: `proyecto`, `numero`, `url`, `titulo`, `estado` (texto ya traducido), `color`,
@@ -362,7 +362,7 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
     """
     celda = "padding:8px 12px;vertical-align:top"
     columnas = ("proyecto",) * con_proyecto + ("adr", "decision", "estado", "implementacion", "issues")
-    tipos = {"adr": "numero", "decision": "texto", "estado": "numero", "implementacion": "numero"}
+    tipos = {"proyecto": "texto", "adr": "numero", "decision": "texto", "estado": "numero", "implementacion": "numero"}
     boton = (
         "background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;"
         "display:inline-flex;gap:4px;align-items:center;white-space:nowrap"
@@ -390,7 +390,8 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
             numero = f'<a href="{html.escape(f["url"])}" target="_blank">{numero}</a>'
         aviso = f'<div style="color:#8a420b;font-size:0.85rem">⚠ {html.escape(f["aviso"])}</div>' if f["aviso"] else ""
         issues = "".join(_issue(i, textos) for i in f["issues"]) or f'<span style="color:{TEXTO_SUAVE}">—</span>'
-        proyecto = f'<td style="{celda}">{html.escape(f["proyecto"])}</td>' if con_proyecto else ""
+        nombre = html.escape(f["proyecto"])
+        proyecto = f'<td data-orden="{nombre}" style="{celda}">{nombre}</td>' if con_proyecto else ""
         cuerpo.append(
             f'<tr data-i="{i}" style="border-top:1px solid rgba(49,51,63,0.1)">'
             f"{proyecto}"

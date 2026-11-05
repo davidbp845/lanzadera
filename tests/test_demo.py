@@ -81,7 +81,7 @@ def test_la_tabla_de_adr_muestra_todas_y_filtra_por_estado(modo_demo):
     at = _abrir("ADR")
     assert at.selectbox(key="adr_proyecto").value is None
     tabla = at.get("html")[-1].proto.body
-    assert ">Project</th>" in tabla
+    assert '>Project<span class="flecha"' in tabla
     # De más a menos issues abiertos: las de un issue abierto van antes que las sin issues.
     assert tabla.index("Rules valid per year") < tabla.index("CSV files as storage")
     at.pills(key="adr_filtros").set_value(["en_curso"]).run()
@@ -210,7 +210,7 @@ def test_etiqueta_de_un_tablero_compartido_se_resume_si_no_cabe(nombres, maximo,
     assert graficos.etiqueta_tablero(nombres, maximo) == esperado
 
 
-def test_tabla_de_adr_ordenable_por_adr_decision_estado_e_implementacion():
+def test_tabla_de_adr_ordenable_por_proyecto_adr_decision_estado_e_implementacion():
     fila = {
         "proyecto": "Acme",
         "numero": "0007",
@@ -227,8 +227,9 @@ def test_tabla_de_adr_ordenable_por_adr_decision_estado_e_implementacion():
     textos_tabla = {c: c for c in ("proyecto", "adr", "decision", "estado", "implementacion", "issues")}
     tabla = graficos.tabla_adr([fila, {**fila, "numero": "0002"}], textos_tabla, con_proyecto=True)
 
-    assert tabla.count("data-tipo=") == 4
-    assert '<th scope="col" style' in tabla  # proyecto e issues no se ordenan
+    assert tabla.count("data-tipo=") == 5
+    assert '<th scope="col" style' in tabla  # issues no se ordena
+    assert 'data-orden="Acme"' in tabla
     assert 'data-i="0"' in tabla and 'data-i="1"' in tabla  # el orden inicial, para volver a él
     assert 'data-orden="7"' in tabla and 'data-orden="2"' in tabla
     assert 'data-orden="Usar &lt;SQLite&gt;"' in tabla
