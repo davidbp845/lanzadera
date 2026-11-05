@@ -49,3 +49,8 @@ puerto = 9505
 ruta = "Otros/negocios"
 ruta_github = "Otros/unico"
 cmd = ["./up.sh"]
+# Solo el panel es Streamlit: con ese filtro, la fila sale con ese enlace (ADR-0022).
+enlaces = [
+  { etiqueta = "Panel", puerto = 9505, tipo = "Streamlit" },
+  { etiqueta = "Frontend", puerto = 9506 },
+]

@@ -49,9 +49,9 @@ def test_sin_puerto_es_solo_enlaces(registro):
         (
             2,
             [
-                ("UI", 9504, "", "localhost"),
-                ("API", 9503, "/health", "localhost"),
-                ("Admin", 9504, "/admin/", "admin.localhost"),
+                ("UI", 9504, "", "localhost", None),
+                ("API", 9503, "/health", "localhost", None),
+                ("Admin", 9504, "/admin/", "admin.localhost", None),
             ],
         ),
     ],
@@ -126,3 +126,7 @@ def test_ruta_github_false_es_sin_github(tmp_path):
     )
     (consola,) = cargar(tmp_path / "proyectos.toml", tmp_path)["proyectos"]
     assert consola["path_github"] is None
+
+
+def test_tipo_de_cada_enlace(registro):
+    assert [e[4] for e in registro["heruka_life_single"]["enlaces"]] == ["Streamlit", None]

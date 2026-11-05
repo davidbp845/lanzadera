@@ -85,3 +85,7 @@ slug = "business"
 puerto = 3001
 ruta = "Clients/business-core"
 cmd = ["./scripts/dev_up.sh"]
+enlaces = [
+  { etiqueta = "Panel", puerto = 3001, tipo = "Streamlit" },
+  { etiqueta = "Frontend", puerto = 4321 },
+]

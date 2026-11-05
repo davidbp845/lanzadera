@@ -26,16 +26,18 @@ def _proyecto(entrada: dict, raiz: Path) -> dict:
         "tipo": entrada.get("tipo"),
     }
     if "enlaces" in entrada:
-        # (etiqueta, puerto, ruta_url, host): la forma que pintan los enlaces de la UI.
+        # (etiqueta, puerto, ruta_url, host, tipo): la forma que pintan los enlaces de la UI. Un enlace
+        # sin tipo hereda el de su fila, que en las de negocios lo pone el código: aquí queda en None (ADR-0022).
         proyecto["enlaces"] = [
-            (e["etiqueta"], e["puerto"], e.get("ruta_url", ""), e.get("host", "localhost")) for e in entrada["enlaces"]
+            (e["etiqueta"], e["puerto"], e.get("ruta_url", ""), e.get("host", "localhost"), e.get("tipo"))
+            for e in entrada["enlaces"]
         ]
     return proyecto
 
 
-def url_enlace(enlace: tuple[str, int, str, str]) -> str:
+def url_enlace(enlace: tuple[str, int, str, str, str | None]) -> str:
     """URL que abre el navegador. El host solo cambia esto: el estado sale siempre del puerto local."""
-    _etiqueta, puerto, ruta_url, host = enlace
+    _etiqueta, puerto, ruta_url, host, _tipo = enlace
     return f"http://{host}:{puerto}{ruta_url}"
 
 

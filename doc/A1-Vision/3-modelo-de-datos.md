@@ -21,7 +21,7 @@ Cargado por `config/proyectos.py:cargar()`. Las rutas son relativas a la carpeta
 | `cmd_detener` | lista | no | Comando de parada. Sin él, se para a quien escucha `puerto` o a los procesos de `proceso`: `SIGTERM` a su grupo en Linux, su árbol de procesos en Windows |
 | `intentos_espera_inicio` | entero | no | Intentos de 0,5 s esperando a que los puertos respondan (por defecto 20 = 10 s) |
 | `env` | tabla | no | Variables añadidas al entorno heredado (no lo sustituyen) |
-| `enlaces` | lista de `{etiqueta, puerto, ruta_url?, host?}` | no | Varios servicios: un enlace por servicio, a `http://<host>:<puerto><ruta_url>` (`host` por defecto `localhost`; [ADR-0013](../A2-ADR/0013-host-opcional-en-los-enlaces.md)). `iniciar()` espera una vez a cada puerto, aunque se repita en varios enlaces |
+| `enlaces` | lista de `{etiqueta, puerto, ruta_url?, host?, tipo?}` | no | Varios servicios: un enlace por servicio, a `http://<host>:<puerto><ruta_url>` (`host` por defecto `localhost`; [ADR-0013](../A2-ADR/0013-host-opcional-en-los-enlaces.md)). `iniciar()` espera una vez a cada puerto, aunque se repita en varios enlaces. `tipo`, el framework de ese servicio, si no es el de la fila (p. ej. el panel Streamlit de un proyecto Astro): la fila sale también con esa píldora, y con ella solo muestra ese enlace; sin `tipo`, el enlace lleva el de su fila ([ADR-0022](../A2-ADR/0022-tipo-en-cada-enlace.md)) |
 
 Cada entrada no trivial lleva encima un comentario con el porqué de sus claves (p. ej. por qué necesita `cmd_detener`). Esos comentarios son parte del dato.
 
@@ -33,9 +33,9 @@ Opcionales: solo tienen sentido con heruka-flow. Sin `[negocios]`, la Lanzadera 
 - `negocios.intentos_espera_inicio`: margen de arranque de cada negocio.
 - `negocios.single`: un `[[proyecto]]` más (con `ruta_github` si su repositorio no es heruka-flow), que sale como fila de negocio en la Lanzadera solo si heruka-flow no tiene negocios multi-tenant.
 
-Las filas de negocios, multi-tenant o single, son tipo `heruka-flow` sin escribirlo en el registro.
+Las filas de negocios, multi-tenant o single, son tipo `heruka-flow` sin escribirlo en el registro. El Panel de cada negocio multi-tenant es `Streamlit`, también en código; el de `negocios.single`, si lo es, lo dice el `tipo` de su enlace.
 
-En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta), `path_github` (la de `ruta_github` o, sin ella, `path`), `puerto`, `cmd` y `tipo` (`None` si faltan) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host)`, con `ruta_url` vacía y `host` `localhost` si faltan. La URL la construye `url_enlace()`.
+En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absoluta), `path_github` (la de `ruta_github` o, sin ella, `path`), `puerto`, `cmd` y `tipo` (`None` si faltan) y `enlaces` como tuplas `(etiqueta, puerto, ruta_url, host, tipo)`, con `ruta_url` vacía, `host` `localhost` y `tipo` `None` si faltan. La URL la construye `url_enlace()`.
 
 ## Enlaces — `datos/enlaces.csv`
 

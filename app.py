@@ -150,7 +150,7 @@ def iniciar(proyecto: dict) -> None:
     # toggle se pone verde y los enlaces aparecen antes de que frontend/
     # backend respondan de verdad.
     # Un puerto puede repetirse en varios enlaces (la app y su admin en otro host): se espera una vez.
-    puertos_enlaces = dict.fromkeys(puerto for _etiqueta, puerto, _ruta, _host in proyecto.get("enlaces", []))
+    puertos_enlaces = dict.fromkeys(puerto for _etiqueta, puerto, *_ in proyecto.get("enlaces", []))
     for puerto_enlace in puertos_enlaces:
         if puerto_enlace != proyecto["puerto"]:
             _esperar_puerto(puerto_enlace, activo_esperado=True, intentos=intentos)
@@ -330,6 +330,8 @@ def _buscar(key: str, placeholder: str) -> str:
 ESTADOS = ["activo", "parado"]
 # Tipo de las filas de negocios, multi-tenant o single: no se escribe en el registro (ADR-0015).
 TIPO_NEGOCIOS = "heruka-flow"
+# El panel de cada negocio multi-tenant: sus enlaces están en código, y su tipo también (ADR-0022).
+TIPO_PANEL_NEGOCIO = "Streamlit"
 
 
 def _sin_enlace(texto: str, explicacion: str) -> str:
@@ -472,7 +474,17 @@ def _interruptor_todos(visibles: list[dict]) -> None:
 def _enlaces_proyecto(proyecto: dict, activo: bool | None) -> list[tuple]:
     if not (activo and proyecto["cmd"] is not None and proyecto["puerto"] is not None):
         return []
-    return proyecto.get("enlaces", [(t("enlace.abrir"), proyecto["puerto"], "", "localhost")])
+    return proyecto.get("enlaces", [(t("enlace.abrir"), proyecto["puerto"], "", "localhost", None)])
+
+
+def _tipos_fila(tipo: str | None, enlaces: list[tuple]) -> set[str]:
+    """El tipo de la fila más los de sus enlaces: con cualquiera de ellos sale en el filtro (ADR-0022)."""
+    return {tipo, *(e[4] for e in enlaces)} - {None}
+
+
+def _enlaces_del_tipo(enlaces: list[tuple], tipo_fila: str | None, tipos: list[str]) -> list[tuple]:
+    """Con un filtro de tipo, solo los enlaces de los tipos activos; un enlace sin tipo lleva el de su fila."""
+    return [e for e in enlaces if not tipos or (e[4] or tipo_fila) in tipos]
 
 
 def _orden_proyecto(proyecto: dict, activo: bool | None) -> dict:
@@ -487,7 +499,7 @@ def _orden_proyecto(proyecto: dict, activo: bool | None) -> dict:
     }
 
 
-def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
+def _render_proyecto(proyecto: dict, activo: bool | None, tipo_fila: str | None = None, tipos=()) -> None:
     nombre, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
         COLUMNAS_LANZADERA, vertical_alignment="center"
     )
@@ -505,7 +517,7 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
     else:
         estado.markdown(t("estado.activo") if activo else t("estado.parado"))
 
-    if lista := _enlaces_proyecto(proyecto, activo):
+    if lista := _enlaces_del_tipo(_enlaces_proyecto(proyecto, activo), tipo_fila, tipos):
         _pintar_enlaces(enlaces, [(enlace[0], url_enlace(enlace)) for enlace in lista])
 
     _pintar_github(enlaces_github, proyecto["path_github"])
@@ -618,7 +630,15 @@ def _render_negocios_todos(negocios: list[dict], activos: list[dict]) -> None:
         _interruptor(key, _on_change)
 
 
-def _render_negocio(negocio: dict, negocios: list[dict], activos: list[dict]) -> None:
+def _enlaces_negocio(negocio: dict) -> list[tuple]:
+    return [
+        ("Frontend", negocio["front"], "", "localhost", None),
+        ("Panel", negocio["panel"], "", "localhost", TIPO_PANEL_NEGOCIO),
+        ("API", negocio["api"], "/health", "localhost", None),
+    ]
+
+
+def _render_negocio(negocio: dict, negocios: list[dict], activos: list[dict], tipos=()) -> None:
     activo = negocio in activos
     nombre, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
         COLUMNAS_LANZADERA, vertical_alignment="center"
@@ -629,11 +649,7 @@ def _render_negocio(negocio: dict, negocios: list[dict], activos: list[dict]) ->
     if activo:
         _pintar_enlaces(
             enlaces,
-            [
-                ("Frontend", f"http://localhost:{negocio['front']}"),
-                ("Panel", f"http://localhost:{negocio['panel']}"),
-                ("API", f"http://localhost:{negocio['api']}/health"),
-            ],
+            [(e[0], url_enlace(e)) for e in _enlaces_del_tipo(_enlaces_negocio(negocio), TIPO_NEGOCIOS, tipos)],
         )
     _pintar_github(enlaces_github, _carpeta_negocio(negocio))
     with interruptor:
@@ -660,11 +676,13 @@ def _filas_lanzadera() -> list[dict]:
                 "texto": f"{proyecto['nombre']} {proyecto['ruta']} {proyecto['puerto'] or ''}",
                 "carpeta": _carpeta_raiz(proyecto),
                 "activo": activo,
-                "tipo": proyecto["tipo"],
+                "tipos": _tipos_fila(proyecto["tipo"], proyecto.get("enlaces", [])),
                 "tablero": _tablero_de(proyecto["path_github"]),
                 "proyecto": _con_interruptor(proyecto),
                 "orden": _orden_proyecto(proyecto, activo),
-                "pintar": lambda proyecto=proyecto, activo=activo: _render_proyecto(proyecto, activo),
+                "pintar": lambda tipos, proyecto=proyecto, activo=activo: _render_proyecto(
+                    proyecto, activo, proyecto["tipo"], tipos
+                ),
             }
         )
     if not CON_NEGOCIOS:
@@ -688,10 +706,10 @@ def _filas_lanzadera() -> list[dict]:
                 "texto": f"{heruka_flow['nombre']} {HERUKA_LIFE_SINGLE['ruta']}",
                 "carpeta": carpeta,
                 "activo": None,
-                "tipo": TIPO_NEGOCIOS,
+                "tipos": {TIPO_NEGOCIOS},
                 "tablero": _github(str(HERUKA_FLOW))[1],
                 "orden": _orden_proyecto(heruka_flow, None),
-                "pintar": lambda: _render_proyecto(heruka_flow, None),
+                "pintar": lambda _tipos: _render_proyecto(heruka_flow, None),
             }
         )
         activo = esta_activo(HERUKA_LIFE_SINGLE)
@@ -700,11 +718,11 @@ def _filas_lanzadera() -> list[dict]:
                 "texto": f"{HERUKA_LIFE_SINGLE['nombre']} {HERUKA_LIFE_SINGLE['ruta']} {HERUKA_LIFE_SINGLE['puerto']}",
                 "carpeta": carpeta,
                 "activo": activo,
-                "tipo": TIPO_NEGOCIOS,
+                "tipos": _tipos_fila(TIPO_NEGOCIOS, HERUKA_LIFE_SINGLE.get("enlaces", [])),
                 "tablero": _tablero_de(HERUKA_LIFE_SINGLE["path_github"]),
                 "proyecto": _con_interruptor(HERUKA_LIFE_SINGLE),
                 "orden": _orden_proyecto(HERUKA_LIFE_SINGLE, activo),
-                "pintar": lambda: _render_proyecto(HERUKA_LIFE_SINGLE, activo),
+                "pintar": lambda tipos: _render_proyecto(HERUKA_LIFE_SINGLE, activo, TIPO_NEGOCIOS, tipos),
             }
         )
         return filas
@@ -717,7 +735,7 @@ def _filas_lanzadera() -> list[dict]:
             "texto": f"{t('todos_negocios')} " + " ".join(n["id"] for n in negocios),
             "carpeta": carpeta,
             "activo": bool(activos),
-            "tipo": TIPO_NEGOCIOS,
+            "tipos": {TIPO_NEGOCIOS},
             "tablero": _github(str(HERUKA_FLOW))[1],
             "negocios": negocios,
             **de_negocios,
@@ -727,7 +745,7 @@ def _filas_lanzadera() -> list[dict]:
                 "estado": bool(activos),
                 "enlaces": ", ".join(n["id"] for n in activos) or None,
             },
-            "pintar": lambda: _render_negocios_todos(negocios, activos),
+            "pintar": lambda _tipos: _render_negocios_todos(negocios, activos),
         }
     )
     for negocio in negocios:
@@ -736,7 +754,7 @@ def _filas_lanzadera() -> list[dict]:
                 "texto": f"{t('negocio', id=negocio['id'])} {HERUKA_LIFE_SINGLE['ruta']} {negocio['panel']}",
                 "carpeta": carpeta,
                 "activo": negocio in activos,
-                "tipo": TIPO_NEGOCIOS,
+                "tipos": _tipos_fila(TIPO_NEGOCIOS, _enlaces_negocio(negocio)),
                 "tablero": _github(str(_carpeta_negocio(negocio)))[1],
                 "negocios": [negocio],
                 **de_negocios,
@@ -746,7 +764,7 @@ def _filas_lanzadera() -> list[dict]:
                     "estado": negocio in activos,
                     "enlaces": "Frontend · Panel · API" if negocio in activos else None,
                 },
-                "pintar": lambda negocio=negocio: _render_negocio(negocio, negocios, activos),
+                "pintar": lambda tipos, negocio=negocio: _render_negocio(negocio, negocios, activos, tipos),
             }
         )
     return filas
@@ -910,7 +928,7 @@ def render_proyectos() -> None:
     _graficos_lanzadera()
 
     carpetas_filas = sorted({f["carpeta"] for f in filas})
-    tipos_filas = sorted({f["tipo"] for f in filas if f["tipo"]}, key=str.lower)
+    tipos_filas = sorted(set().union(*(f["tipos"] for f in filas)), key=str.lower)
     _colorear_pastillas([*carpetas_filas, *tipos_filas])
     st.html(ESTILO_LATIDO)
     barra = st.container(horizontal=True, vertical_alignment="center", key="barra_lanzadera")
@@ -937,7 +955,7 @@ def render_proyectos() -> None:
         for f in filas
         if (not buscado or buscado in f["texto"].lower())
         and (not carpetas or f["carpeta"] in carpetas)
-        and (not tipos or f["tipo"] in tipos)
+        and (not tipos or f["tipos"] & set(tipos))
         # Una fila sin estado (proyecto sin app) no es ni activa ni parada.
         and (not estados or (f["activo"] is not None and ("activo" if f["activo"] else "parado") in estados))
     ]
@@ -1032,7 +1050,7 @@ def render_proyectos() -> None:
                 _interruptor_todos(visibles)
         for i, fila in enumerate(visibles):
             with st.container(key=f"fila_{'impar' if i % 2 else 'par'}_{i}"):
-                fila["pintar"]()
+                fila["pintar"](tipos)
 
 
 # Paleta categórica validada (orden fijo, ver skill dataviz / references/palette.md).
@@ -1303,7 +1321,7 @@ def _puertos_registro() -> list[tuple[int, str, bool]]:
     for p in PROYECTOS_CON_APP:
         if p["puerto"] is not None:
             puertos[p["puerto"]] = p["nombre"]
-        for etiqueta, puerto, _ruta, _host in p.get("enlaces", []):
+        for etiqueta, puerto, *_ in p.get("enlaces", []):
             puertos.setdefault(puerto, f"{p['nombre']} · {etiqueta}")
     if CON_NEGOCIOS:
         if negocios := listar_negocios():

@@ -217,7 +217,7 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
     puertos_estado = (
         [proyecto["puerto"]]
         if proyecto["puerto"] is not None
-        else [puerto for _etiqueta, puerto, _ruta, _host in proyecto.get("enlaces", [])]
+        else [puerto for _etiqueta, puerto, *_ in proyecto.get("enlaces", [])]
     )
     escuchando = [puerto for puerto in puertos_estado if puerto in puertos]
     if not escuchando:
@@ -235,7 +235,7 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
         pids = set()
         for raiz in raices_reales(proyecto["cmd"], proyecto["path"], filas, cwd_de):
             pids |= descendientes(raiz, filas)
-        puertos_raiz = {puerto for _etiqueta, puerto, _ruta, _host in proyecto.get("enlaces", [])}
+        puertos_raiz = {puerto for _etiqueta, puerto, *_ in proyecto.get("enlaces", [])}
         for puerto in puertos_raiz or {proyecto["puerto"]}:
             pid = puertos.get(puerto)
             if pid is not None:
@@ -247,7 +247,7 @@ def _medir_proyecto(proyecto: dict, filas: Filas, puertos: dict[int, int | None]
         # Un puerto en varios enlaces (la app y su admin en otro host) es un solo servicio:
         # va con el primer enlace que lo nombra.
         vistos: set[int] = set()
-        for etiqueta, puerto, _ruta, _host in proyecto["enlaces"]:
+        for etiqueta, puerto, *_ in proyecto["enlaces"]:
             if puerto in vistos:
                 continue
             vistos.add(puerto)

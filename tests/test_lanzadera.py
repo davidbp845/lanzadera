@@ -103,9 +103,10 @@ def test_pildoras_de_carpeta_tipo_y_estado(lanzadera):
 @pytest.mark.parametrize(
     ("filtro", "contador"),
     [
-        (["Streamlit"], "2 de 7"),
+        # Los negocios salen por su Panel, que es Streamlit.
+        (["Streamlit"], "4 de 7"),
         # OR entre tipos; las filas sin tipo (Docs) quedan fuera.
-        (["Streamlit", "Wagtail"], "3 de 7"),
+        (["Streamlit", "Wagtail"], "5 de 7"),
         # AND con la carpeta.
         (["Wagtail", "Apps"], "0 de 7"),
     ],
@@ -115,6 +116,18 @@ def test_filtra_por_tipo(lanzadera, filtro, contador):
     at.button_group(key="filtros_lanzadera").set_value(filtro).run()
     assert not at.exception
     assert _contador(at) == contador
+
+
+@pytest.mark.parametrize(("filtro", "enlaces"), [([], "Panel · Frontend"), (["Streamlit"], "Panel")])
+def test_con_un_filtro_de_tipo_solo_los_enlaces_de_ese_tipo(lanzadera, monkeypatch, filtro, enlaces):
+    lanzadera.listar = ""
+    monkeypatch.setattr(socket.socket, "connect_ex", lambda _sock, direccion: 0 if direccion[1] == 9505 else 1)
+    at = _abrir()
+    at.button_group(key="filtros_lanzadera").set_value(filtro).run()
+    assert not at.exception
+    assert "**Único**" in _nombres(at)
+    pintados = [m.value for m in at.markdown if m.value.startswith("[Panel]")]
+    assert [" · ".join(re.findall(r"\[([^\]]+)\]", v)) for v in pintados] == [enlaces]
 
 
 @pytest.mark.parametrize(
@@ -239,7 +252,7 @@ def test_sin_negocios_local_mide_solo_los_proyectos(sin_negocios, monkeypatch):
     ("listar", "fila", "puertos"),
     [
         (LISTAR, "negocios", [4321, 8520, 4322, 8521, 8001]),
-        ("", "unico", []),
+        ("", "unico", [9505, 9506]),
     ],
 )
 def test_local_mide_los_negocios_o_el_single(lanzadera, monkeypatch, listar, fila, puertos):
@@ -256,7 +269,7 @@ def test_local_mide_los_negocios_o_el_single(lanzadera, monkeypatch, listar, fil
     at.sidebar.radio(key="pagina").set_value("Local").run()
     assert not at.exception
     assert [p["slug"] for p in medidos] == ["esta", "simple", "multi", fila]
-    assert [puerto for _etiqueta, puerto, _ruta, _host in medidos[-1].get("enlaces", [])] == puertos
+    assert [puerto for _etiqueta, puerto, *_ in medidos[-1].get("enlaces", [])] == puertos
 
 
 ATAJOS = """
