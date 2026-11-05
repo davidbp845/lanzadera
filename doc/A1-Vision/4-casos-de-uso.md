@@ -9,6 +9,7 @@
 | Ir al repositorio o al tablero, ver cuánto hay en cada estado | Página "Lanzadera": columna GitHub, con el recuento por estado del tablero |
 | Arrancar un proyecto | Interruptor a "activo": espera a que respondan todos sus puertos antes de ponerse verde |
 | Parar un proyecto | Interruptor a "parado" |
+| Arrancar o parar varios a la vez | Página "Lanzadera": filtrar las filas (buscador, carpeta, tipo, estado) y usar el interruptor de la cabecera |
 | Abrir un proyecto | Enlace(s) de su fila, visibles solo si está activo |
 | Arrancar/parar negocios | Página "Lanzadera", filtro "Negocios": todos a la vez o uno a uno (rearranca el stack con la nueva selección) |
 | Encontrar un enlace | Página "Enlaces": buscador de texto + filtro por etiquetas |
