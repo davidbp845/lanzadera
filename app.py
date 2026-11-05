@@ -469,6 +469,24 @@ def _interruptor_todos(visibles: list[dict]) -> None:
     _interruptor(key, _on_change, ayuda=t("interruptor_todos"), deshabilitado=not (proyectos or negocios_visibles))
 
 
+def _enlaces_proyecto(proyecto: dict, activo: bool | None) -> list[tuple]:
+    if not (activo and proyecto["cmd"] is not None and proyecto["puerto"] is not None):
+        return []
+    return proyecto.get("enlaces", [(t("enlace.abrir"), proyecto["puerto"], "", "localhost")])
+
+
+def _orden_proyecto(proyecto: dict, activo: bool | None) -> dict:
+    """Claves de las cabeceras ordenables; `None` es la celda "—", que va siempre al final."""
+    sin_app = proyecto["puerto"] is None and not proyecto["proceso"]
+    return {
+        "proyecto": proyecto["nombre"],
+        "puerto": proyecto["puerto"],
+        # Esta app sale siempre como activa, aunque su puerto no responda (p. ej. en los tests).
+        "estado": None if sin_app else proyecto["cmd"] is None or bool(activo),
+        "enlaces": " · ".join(e[0] for e in _enlaces_proyecto(proyecto, activo)) or None,
+    }
+
+
 def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
     nombre, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
         COLUMNAS_LANZADERA, vertical_alignment="center"
@@ -487,12 +505,8 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
     else:
         estado.markdown(t("estado.activo") if activo else t("estado.parado"))
 
-    if activo and proyecto["cmd"] is not None and proyecto["puerto"] is not None:
-        lista = proyecto.get("enlaces", [(t("enlace.abrir"), proyecto["puerto"], "", "localhost")])
-        _pintar_enlaces(
-            enlaces,
-            [(enlace[0], url_enlace(enlace)) for enlace in lista],
-        )
+    if lista := _enlaces_proyecto(proyecto, activo):
+        _pintar_enlaces(enlaces, [(enlace[0], url_enlace(enlace)) for enlace in lista])
 
     _pintar_github(enlaces_github, proyecto["path_github"])
 
@@ -649,6 +663,7 @@ def _filas_lanzadera() -> list[dict]:
                 "tipo": proyecto["tipo"],
                 "tablero": _tablero_de(proyecto["path_github"]),
                 "proyecto": _con_interruptor(proyecto),
+                "orden": _orden_proyecto(proyecto, activo),
                 "pintar": lambda proyecto=proyecto, activo=activo: _render_proyecto(proyecto, activo),
             }
         )
@@ -675,6 +690,7 @@ def _filas_lanzadera() -> list[dict]:
                 "activo": None,
                 "tipo": TIPO_NEGOCIOS,
                 "tablero": _github(str(HERUKA_FLOW))[1],
+                "orden": _orden_proyecto(heruka_flow, None),
                 "pintar": lambda: _render_proyecto(heruka_flow, None),
             }
         )
@@ -687,6 +703,7 @@ def _filas_lanzadera() -> list[dict]:
                 "tipo": TIPO_NEGOCIOS,
                 "tablero": _tablero_de(HERUKA_LIFE_SINGLE["path_github"]),
                 "proyecto": _con_interruptor(HERUKA_LIFE_SINGLE),
+                "orden": _orden_proyecto(HERUKA_LIFE_SINGLE, activo),
                 "pintar": lambda: _render_proyecto(HERUKA_LIFE_SINGLE, activo),
             }
         )
@@ -704,6 +721,12 @@ def _filas_lanzadera() -> list[dict]:
             "tablero": _github(str(HERUKA_FLOW))[1],
             "negocios": negocios,
             **de_negocios,
+            "orden": {
+                "proyecto": t("todos_negocios"),
+                "puerto": None,
+                "estado": bool(activos),
+                "enlaces": ", ".join(n["id"] for n in activos) or None,
+            },
             "pintar": lambda: _render_negocios_todos(negocios, activos),
         }
     )
@@ -717,6 +740,12 @@ def _filas_lanzadera() -> list[dict]:
                 "tablero": _github(str(_carpeta_negocio(negocio)))[1],
                 "negocios": [negocio],
                 **de_negocios,
+                "orden": {
+                    "proyecto": t("negocio", id=negocio["id"]),
+                    "puerto": negocio["panel"],
+                    "estado": negocio in activos,
+                    "enlaces": "Frontend · Panel · API" if negocio in activos else None,
+                },
                 "pintar": lambda negocio=negocio: _render_negocio(negocio, negocios, activos),
             }
         )
@@ -831,6 +860,45 @@ def _graficos_lanzadera() -> None:
     )
 
 
+# Cabeceras ordenables de la Lanzadera: clave en fila["orden"] -> texto de la cabecera.
+COLUMNAS_ORDENABLES = {
+    "proyecto": "col.proyecto_app",
+    "puerto": "col.puerto",
+    "estado": "col.estado",
+    "enlaces": "col.enlaces",
+}
+FLECHA = {"asc": "▲", "desc": "▼"}
+# Clave propia y no la de un widget: el orden se cambia desde el callback de cada cabecera.
+ORDEN_COLUMNA = "orden_columna_lanzadera"
+
+
+def _cambiar_orden_columna(clave: str) -> None:
+    """Ascendente, descendente y vuelta al orden del registro, como la tabla de ADR."""
+    actual = st.session_state.get(ORDEN_COLUMNA)
+    if not actual or actual[0] != clave:
+        st.session_state[ORDEN_COLUMNA] = (clave, "asc")
+    elif actual[1] == "asc":
+        st.session_state[ORDEN_COLUMNA] = (clave, "desc")
+    else:
+        st.session_state.pop(ORDEN_COLUMNA)
+    # Excluyente con las píldoras de orden por issues: dos órdenes a la vez no se explican.
+    st.session_state["orden_lanzadera"] = None
+
+
+def _ordenar_por_columna(filas: list[dict], clave: str, sentido: str) -> list[dict]:
+    """Las celdas "—" van al final en los dos sentidos; a igualdad, el orden del registro (sort estable)."""
+    con_valor = [f for f in filas if f["orden"][clave] is not None]
+    sin_valor = [f for f in filas if f["orden"][clave] is None]
+
+    def valor(fila):
+        v = fila["orden"][clave]
+        if clave == "estado":
+            return not v  # activo antes que parado
+        return v.lower() if isinstance(v, str) else v
+
+    return sorted(con_valor, key=valor, reverse=sentido == "desc") + sin_valor
+
+
 def render_proyectos() -> None:
     st.title(t("pagina.Lanzadera"))
     _aviso_demo()
@@ -895,7 +963,11 @@ def render_proyectos() -> None:
                 label_visibility="collapsed",
                 key="orden_lanzadera",
                 width="content",
+                on_change=lambda: st.session_state.pop(ORDEN_COLUMNA, None),
             )
+    columna_orden = st.session_state.get(ORDEN_COLUMNA)
+    if columna_orden:
+        visibles = _ordenar_por_columna(visibles, *columna_orden)
     if orden:
         # Ordenar por un estado del tablero solo tiene sentido en las apps que tienen tablero.
         estado = orden.removeprefix("↓ ")
@@ -910,6 +982,7 @@ def render_proyectos() -> None:
         f'"{texto.strip()}"' if buscado else "",
         ", ".join(t(f"filtro.{o}") if o in ESTADOS else o for o in seleccion),
         orden or "",
+        f"{t(COLUMNAS_ORDENABLES[columna_orden[0]])} {FLECHA[columna_orden[1]]}" if columna_orden else "",
     ]
     contador.caption(" · ".join([t("contador", n=len(visibles), total=len(filas)), *filter(None, activos)]))
 
@@ -936,18 +1009,25 @@ def render_proyectos() -> None:
 [class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(6),
 .st-key-cabecera_lanzadera [data-testid="stColumn"] { white-space: nowrap; }
 .st-key-cabecera_lanzadera { background: rgba(246, 51, 102, 0.12); }
+/* Las cabeceras ordenables son botones terciarios: en negrita y sin relleno, como GitHub. */
+.st-key-cabecera_lanzadera button { padding: 0; min-height: 0; }
+.st-key-cabecera_lanzadera button p { font-weight: 600; }
 [class*="st-key-fila_impar_"] { background: rgba(49, 51, 63, 0.05); }
 </style>"""
     )
     with st.container(key="tabla_lanzadera"):
         with st.container(key="cabecera_lanzadera"):
-            *columnas, interruptor = st.columns(COLUMNAS_LANZADERA, vertical_alignment="center")
-            for columna, titulo in zip(
-                columnas,
-                [t("col.proyecto_app"), t("col.puerto"), t("col.estado"), t("col.enlaces"), t("col.github")],
-                strict=True,
-            ):
-                columna.markdown(f"**{titulo}**")
+            *columnas, github_col, interruptor = st.columns(COLUMNAS_LANZADERA, vertical_alignment="center")
+            for columna, (clave, texto) in zip(columnas, COLUMNAS_ORDENABLES.items(), strict=True):
+                flecha = f" {FLECHA[columna_orden[1]]}" if columna_orden and columna_orden[0] == clave else ""
+                columna.button(
+                    t(texto) + flecha,
+                    key=f"orden_{clave}",
+                    type="tertiary",
+                    on_click=_cambiar_orden_columna,
+                    args=(clave,),
+                )
+            github_col.markdown(f"**{t('col.github')}**")
             with interruptor:
                 _interruptor_todos(visibles)
         for i, fila in enumerate(visibles):

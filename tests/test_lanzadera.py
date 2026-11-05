@@ -61,11 +61,7 @@ def _contador(at):
 
 
 def _nombres(at):
-    return [
-        m.value
-        for m in at.markdown
-        if m.value.startswith("**") and m.value not in {"**Proyecto / Aplicación**", "**Puerto**"}
-    ]
+    return [m.value for m in at.markdown if m.value.startswith("**") and m.value != "**GitHub**"]
 
 
 @pytest.mark.parametrize(
@@ -326,3 +322,33 @@ def test_el_interruptor_de_la_cabecera_para_las_activas_visibles(con_proceso, mo
     at.toggle(key="switch_todos").set_value(False).run()
     assert not at.exception
     assert con_proceso.terminados == [700]
+
+
+@pytest.mark.parametrize(
+    ("clics", "esperado"),
+    [
+        # Las filas sin valor ("—") van al final en los dos sentidos.
+        (["orden_puerto"], ["Negocio a", "Negocio b", "Esta app", "Simple", "Multi", "Docs", "Heruka Flow"]),
+        (["orden_puerto"] * 2, ["Multi", "Simple", "Esta app", "Negocio b", "Negocio a", "Docs", "Heruka Flow"]),
+        # El tercer clic vuelve al orden del registro.
+        (["orden_puerto"] * 3, ["Esta app", "Simple", "Multi", "Docs", "Heruka Flow", "Negocio a", "Negocio b"]),
+        (["orden_proyecto"], ["Docs", "Esta app", "Heruka Flow", "Multi", "Negocio a", "Negocio b", "Simple"]),
+        # Esta app sale activa; el resto, parado; Docs no tiene estado.
+        (["orden_estado"], ["Esta app", "Simple", "Multi", "Heruka Flow", "Negocio a", "Negocio b", "Docs"]),
+        # Todo parado: nadie tiene enlaces y queda el orden del registro.
+        (["orden_enlaces"], ["Esta app", "Simple", "Multi", "Docs", "Heruka Flow", "Negocio a", "Negocio b"]),
+    ],
+)
+def test_las_cabeceras_ordenan_la_tabla(lanzadera, clics, esperado):
+    at = _abrir()
+    for clic in clics:
+        at.button(key=clic).click().run()
+    assert not at.exception
+    assert _nombres(at) == [f"**{n}**" for n in esperado]
+
+
+def test_ordenar_por_cabecera_quita_el_orden_por_issues(lanzadera):
+    at = _abrir()
+    at.session_state["orden_lanzadera"] = "↓ Ready"
+    at.button(key="orden_puerto").click().run()
+    assert at.session_state["orden_lanzadera"] is None
