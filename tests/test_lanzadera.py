@@ -25,7 +25,7 @@ def lanzadera(monkeypatch):
     def run(cmd, *args, **kwargs):
         if cmd[:2] == ["./scripts/dev_up.sh", "--listar"]:
             return subprocess.CompletedProcess(cmd, 0, lanzadera.listar, "")
-        if cmd == ["./scripts/dev_down.sh"]:
+        if cmd in (["./scripts/dev_down.sh"], ["./down.sh"]):
             llamadas.append(cmd)
             return subprocess.CompletedProcess(cmd, 0, "", "")
         return run_real(cmd, *args, **kwargs)
@@ -185,6 +185,20 @@ def test_el_interruptor_de_la_cabecera_arranca_las_filas_visibles(lanzadera, mon
     assert not at.exception
     # Los proyectos arrancan en paralelo: el orden entre ellos no está fijado; los negocios, una sola vez.
     assert sorted(lanzadera.llamadas) == sorted(llamadas)
+
+
+@pytest.mark.parametrize("encender", [True, False])
+def test_el_interruptor_de_la_cabecera_actualiza_los_de_cada_fila(lanzadera, monkeypatch, encender):
+    # Arrancados o parados por la cabecera, el interruptor de cada fila refleja el estado nuevo.
+    monkeypatch.setattr(socket.socket, "connect_ex", lambda _sock, _direccion: 0 if not encender else 1)
+    monkeypatch.setattr(ram, "pid_en_puerto", lambda _puerto: None)
+    at = _abrir("multi")
+    monkeypatch.setattr(time, "sleep", lambda _segundos: None)
+    assert at.toggle(key="switch_multi").value is not encender
+    monkeypatch.setattr(socket.socket, "connect_ex", lambda _sock, _direccion: 0 if encender else 1)
+    at.toggle(key="switch_todos").set_value(encender).run()
+    assert not at.exception
+    assert at.toggle(key="switch_multi").value is encender
 
 
 def test_el_interruptor_de_la_cabecera_sin_filas_arrancables_esta_deshabilitado(lanzadera):

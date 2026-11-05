@@ -501,6 +501,9 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
             st.caption(t("esta_app"))
         else:
             key = f"switch_{proyecto['slug']}"
+            # Con key, `value` solo vale la primera vez: sin esto el interruptor conserva su valor
+            # viejo cuando el proyecto cambia por otra vía (el de la cabecera, un arranque externo).
+            st.session_state[key] = bool(activo)
 
             def _on_change(proyecto=proyecto, key=key):
                 if st.session_state[key]:
@@ -508,7 +511,7 @@ def _render_proyecto(proyecto: dict, activo: bool | None) -> None:
                 else:
                     detener(proyecto)
 
-            _interruptor(key, _on_change, value=activo)
+            _interruptor(key, _on_change)
 
 
 # El buscador de la Lanzadera relanza la página tras cada pausa al escribir y --listar
