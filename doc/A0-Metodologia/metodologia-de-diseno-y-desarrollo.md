@@ -100,6 +100,7 @@ El detalle de cada etapa vive en el issue y su estado, en el [tablero (proyecto 
 - **Documento**: cuerpo del issue.
 - **Índice**: situación/diagnóstico · plan · alcance (`app.py` / `config/` / `datos/` / scripts de un proyecto hermano) · tests existentes que el plan puede dejar obsoletos.
 - **Etiquetas**: una de área y, si es un bug, `bug`.
+- **Pie `Issue: #NN`**: lo lleva todo commit que no sea `docs`/`chore`. Un ajuste pequeño del panel (estilo, contraste, textos, espaciado) va como comentario en el paraguas «Panel: ajustes finos varios» con `/dev:crear-retoque`, y el commit lo cita. Un ajuste que añade comportamiento a una funcionalidad ya cerrada lleva issue propio.
 
 | Etiqueta | Qué cubre |
 |---|---|
