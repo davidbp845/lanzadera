@@ -240,6 +240,10 @@ def _tableros() -> tuple[tuple[str, int], ...]:
 # gráfico de issues; un cero va en gris.
 COLORES_ESTADO = graficos.COLORES_ESTADO
 GRIS_ESTADO = "#8a8a8a"
+# La píldora de orden por issues abiertos: el gris oscuro del texto de Streamlit.
+COLOR_ABIERTOS = "#31333F"
+# Valor interno de esa píldora; las de estado guardan "↓ <estado>".
+ORDEN_ABIERTOS = "abiertos"
 
 
 # La pastilla In progress parpadea mientras una sesión de Claude Code trabaja en uno de sus
@@ -395,9 +399,10 @@ def _colorear_pastillas(categorias: list[str]) -> None:
         reglas.append(
             f'{boton}[aria-pressed="true"], {boton}[aria-checked="true"] {{ color: #fff; background: {color}; }}'
         )
-    # Las de orden, con el color de su estado en las pastillas del recuento y, como ellas,
-    # texto oscuro: amarillo y aqua no se leen como color de texto.
-    for i, color in enumerate(COLORES_ESTADO, start=1):
+    # Las de orden: la de abiertos, en el gris del texto, porque no es un estado; las demás, con
+    # el color de su estado en las pastillas del recuento y, como ellas, texto oscuro: amarillo
+    # y aqua no se leen como color de texto.
+    for i, color in enumerate([COLOR_ABIERTOS, *COLORES_ESTADO], start=1):
         boton = f".st-key-orden_lanzadera button:nth-child({i})"
         reglas.append(f"{boton} {{ color: #31333F; border-color: {color}; background: {color}1f; }}")
         # aria-pressed en las de selección múltiple, aria-checked en las de una sola. Streamlit
@@ -903,6 +908,10 @@ def _cambiar_orden_columna(clave: str) -> None:
     st.session_state["orden_lanzadera"] = None
 
 
+def _texto_orden(orden: str) -> str:
+    return t("orden.abiertos") if orden == ORDEN_ABIERTOS else orden
+
+
 def _ordenar_por_columna(filas: list[dict], clave: str, sentido: str) -> list[dict]:
     """Las celdas "—" van al final en los dos sentidos; a igualdad, el orden del registro (sort estable)."""
     con_valor = [f for f in filas if f["orden"][clave] is not None]
@@ -976,8 +985,9 @@ def render_proyectos() -> None:
         if _tableros():
             orden = st.pills(
                 "Ordenar por issues en",
-                [f"↓ {estado}" for estado in github.ESTADOS],
+                [ORDEN_ABIERTOS, *(f"↓ {estado}" for estado in github.ESTADOS)],
                 selection_mode="single",
+                format_func=_texto_orden,
                 label_visibility="collapsed",
                 key="orden_lanzadera",
                 width="content",
@@ -988,18 +998,19 @@ def render_proyectos() -> None:
         visibles = _ordenar_por_columna(visibles, *columna_orden)
     if orden:
         # Ordenar por un estado del tablero solo tiene sentido en las apps que tienen tablero.
-        estado = orden.removeprefix("↓ ")
+        # Abiertos: el total sin Done, el mismo que ordena el gráfico «Issues abiertos por estado».
+        estados = github.ESTADOS[:4] if orden == ORDEN_ABIERTOS else [orden.removeprefix("↓ ")]
         recuentos = _recuentos(_tableros())
         visibles = sorted(
             (f for f in visibles if recuentos.get(f["tablero"])),
-            key=lambda f: recuentos[f["tablero"]][estado],
+            key=lambda f: sum(recuentos[f["tablero"]][e] for e in estados),
             reverse=True,
         )
     # Junto al recuento, lo que lo explica: búsqueda, píldoras de filtro y orden activos.
     activos = [
         f'"{texto.strip()}"' if buscado else "",
         ", ".join(t(f"filtro.{o}") if o in ESTADOS else o for o in seleccion),
-        orden or "",
+        _texto_orden(orden) if orden else "",
         f"{t(COLUMNAS_ORDENABLES[columna_orden[0]])} {FLECHA[columna_orden[1]]}" if columna_orden else "",
     ]
     contador.caption(" · ".join([t("contador", n=len(visibles), total=len(filas)), *filter(None, activos)]))

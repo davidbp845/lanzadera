@@ -283,3 +283,25 @@ def test_la_pagina_adr_de_la_demo_marca_la_propuesta_con_los_issues_cerrados(mod
     at.selectbox(key="adr_proyecto").select("notes").run()
     assert not at.exception
     assert "Proposed with all its issues closed" in at.get("html")[-1].proto.body
+
+
+@pytest.mark.parametrize(
+    ("orden", "esperado"),
+    [
+        # Backlog + Ready + In progress + In review, como el gráfico; a igualdad, el registro.
+        ("abiertos", ["Budget tracker", "All businesses", "Launchpad", "Notes vault", "Mail triage", "Contacts sync"]),
+        (
+            "↓ Backlog",
+            ["Budget tracker", "All businesses", "Notes vault", "Job hunt", "Contacts sync", "Business acme"],
+        ),
+    ],
+)
+def test_las_pildoras_de_orden_dejan_solo_las_filas_con_tablero_ordenadas(modo_demo, orden, esperado):
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.session_state["buscar_proyecto"] = {"value": ""}
+    at.session_state["orden_lanzadera"] = orden
+    at.run()
+    assert not at.exception
+    nombres = [m.value for m in at.markdown if m.value.startswith("**") and m.value != "**GitHub**"]
+    assert len(nombres) == 9  # sin AI agents course ni Business bloom, que no tienen tablero
+    assert nombres[:6] == [f"**{n}**" for n in esperado]
