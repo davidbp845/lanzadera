@@ -36,7 +36,7 @@ python3 <ruta a lanzadera>/scripts/anadir_enlace.py "descripcion" "url" "etiquet
 ```
 
 - Escribe en `enlaces.csv` de la carpeta de datos (`HOME_LAUNCHER_DATOS` o `../datos`), con el módulo `csv`; si el fichero no existe, lo crea con la cabecera.
-- Código de salida `0` si añade la fila; `1` si la rechaza (la URL no empieza por `http://` o `https://`, o ya está en el CSV), con el motivo en la salida de error; `2` si no recibe tres argumentos.
+- Código de salida `0` si añade la fila; `1` si la rechaza (la URL no empieza por `http://` o `https://`, o ya está en el CSV, aunque cambie el esquema, el `www.`, las mayúsculas del dominio o la `/` final), con el motivo en la salida de error; `2` si no recibe tres argumentos.
 - No hace commit: la fila queda sin commitear en el contenedor hasta que el usuario la revisa.
 - Convención: añadir la etiqueta `Revisar` a los enlaces que entran por una automatización, para filtrarlos en la página Enlaces.
 

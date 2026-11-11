@@ -23,6 +23,14 @@ class EnlaceRechazado(Exception):
     pass
 
 
+def _normalizar(url: str) -> str:
+    """Clave para detectar repetidos: variantes que llevan a la misma página cuentan como una."""
+    resto = url.strip().split("://", 1)[-1]
+    host, barra, ruta = resto.partition("/")
+    host = host.lower().removeprefix("www.")
+    return (host + barra + ruta).rstrip("/")
+
+
 def anadir(descripcion: str, url: str, etiquetas: str, ruta: Path | None = None) -> Path:
     """Escribe la fila y devuelve la ruta del CSV; `EnlaceRechazado` si la URL no vale o ya está."""
     ruta = ruta or paths.enlaces()
@@ -31,8 +39,10 @@ def anadir(descripcion: str, url: str, etiquetas: str, ruta: Path | None = None)
     existe = ruta.exists()
     if existe:
         texto = ruta.read_text(encoding="utf-8")
-        if any(fila.get("enlace") == url for fila in csv.DictReader(texto.splitlines())):
-            raise EnlaceRechazado(f"la URL ya está en {ruta}: {url}")
+        clave = _normalizar(url)
+        for fila in csv.DictReader(texto.splitlines()):
+            if _normalizar(fila.get("enlace") or "") == clave:
+                raise EnlaceRechazado(f"la URL ya está en {ruta} como {fila['enlace']}")
     with ruta.open("a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if not existe:

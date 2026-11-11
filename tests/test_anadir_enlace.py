@@ -51,12 +51,28 @@ def test_rechaza_una_url_sin_esquema_http(datos, url):
     assert not (datos / "enlaces.csv").exists()
 
 
-def test_no_duplica_una_url_existente(datos):
-    anadir("Docs", "https://docs.example.com", "")
+@pytest.mark.parametrize(
+    "repetida",
+    [
+        "https://docs.example.com/guia",
+        "https://docs.example.com/guia/",
+        "http://docs.example.com/guia",
+        "https://www.docs.example.com/guia",
+        "https://Docs.Example.com/guia",
+    ],
+)
+def test_no_duplica_una_url_existente(datos, repetida):
+    anadir("Docs", "https://docs.example.com/guia", "")
     antes = (datos / "enlaces.csv").read_text()
-    with pytest.raises(EnlaceRechazado):
-        anadir("Otra descripción", "https://docs.example.com", "")
+    with pytest.raises(EnlaceRechazado, match="https://docs.example.com/guia"):
+        anadir("Otra descripción", repetida, "")
     assert (datos / "enlaces.csv").read_text() == antes
+
+
+def test_distingue_rutas_que_solo_comparten_prefijo(datos):
+    anadir("Docs", "https://docs.example.com/guia", "")
+    anadir("Docs API", "https://docs.example.com/guia/api", "")
+    assert len(filas(datos / "enlaces.csv")) == 3
 
 
 @pytest.mark.parametrize(
