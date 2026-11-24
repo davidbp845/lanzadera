@@ -7,7 +7,7 @@ Nivel C de la [metodología](../A0-Metodologia/metodologia-de-diseno-y-desarroll
 
 ## Estado actual del panel
 
-Descrito en [5 — Panel Streamlit](../A1-Vision/5-panel-streamlit.md). Pendiente: capturas de referencia de las páginas (Lanzadera, ADR, Enlaces, VPS, Local), guardadas aquí como `NN Página — estado.png`.
+Descrito en [5 — Panel Streamlit](../A1-Vision/5-panel-streamlit.md). Capturas de referencia de la demo, guardadas aquí como `NN Página — estado.png`: [Lanzadera en claro](01%20Lanzadera%20—%20claro.png) y, en oscuro, [Lanzadera](02%20Lanzadera%20—%20oscuro.png), [ADR](03%20ADR%20—%20oscuro.png), [Enlaces](04%20Enlaces%20—%20oscuro.png), [VPS](05%20VPS%20—%20oscuro.png) y [Local](06%20Local%20—%20oscuro.png).
 
 Tema: claro y oscuro según el sistema, color primario `#F63366`, barra de herramientas automática (`.streamlit/config.toml`): completa en localhost, mínima en la demo pública. Las etiquetas de Enlaces usan la paleta categórica validada de la skill dataviz, en orden fijo.
 
