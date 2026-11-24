@@ -240,8 +240,8 @@ def _tableros() -> tuple[tuple[str, int], ...]:
 # gráfico de issues; un cero va en gris.
 COLORES_ESTADO = graficos.COLORES_ESTADO
 GRIS_ESTADO = "#8a8a8a"
-# La píldora de orden por issues abiertos: el gris oscuro del texto de Streamlit.
-COLOR_ABIERTOS = "#31333F"
+# La píldora de orden por issues abiertos: el color del texto, porque no es un estado.
+COLOR_ABIERTOS = graficos.TEXTO
 # Valor interno de esa píldora; las de estado guardan "↓ <estado>".
 ORDEN_ABIERTOS = "abiertos"
 
@@ -251,7 +251,7 @@ ORDEN_ABIERTOS = "abiertos"
 # pide menos movimiento. El borde va por dentro (outline) para no cambiar el ancho de la fila.
 ESTILO_LATIDO = """<style>
 @keyframes latido { from { opacity: 1; } to { opacity: 0.35; } }
-.latido { outline: 2px solid #31333F; outline-offset: -2px; animation: latido 0.9s ease-in-out infinite alternate; }
+.latido { outline: 2px solid light-dark(#31333F, #FAFAFA); outline-offset: -2px; animation: latido 0.9s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) {
   .latido { animation: none; }
 }
@@ -260,11 +260,13 @@ ESTILO_LATIDO = """<style>
 
 def _pastillas(cuenta: dict) -> str:
     # HTML propio: las pastillas de markdown (:color-badge[]) no dejan cambiar tamaño ni ancho.
-    # Texto oscuro sobre el color: amarillo y aqua no llegan a 3:1 como color de texto.
+    # Texto del tema sobre el color aclarado: amarillo y aqua no llegan a 3:1 como color de texto.
     en_curso = cuenta.get("en_curso", [])
     pastillas = []
     for estado, color in zip(github.ESTADOS, COLORES_ESTADO, strict=True):
-        texto, fondo = ("#31333F", f"{color}4d") if cuenta[estado] else (GRIS_ESTADO, "#8a8a8a1a")
+        texto, fondo = (
+            (graficos.TEXTO, graficos.fondo_suave(color, 30)) if cuenta[estado] else (GRIS_ESTADO, "#8a8a8a1a")
+        )
         titulo, clase = estado, ""
         if estado == "In progress" and en_curso:
             titulo, clase = f"{estado} · {t('en_curso')}: {', '.join(en_curso)}", ' class="latido"'
@@ -394,24 +396,33 @@ def _colorear_pastillas(categorias: list[str]) -> None:
     reglas = []
     for i, color in enumerate(PALETA_CATEGORIAS[: len(categorias)], start=1):
         boton = f".st-key-filtros_lanzadera button:nth-child({i})"
-        reglas.append(f"{boton} {{ color: {color}; border-color: {color}; background: {color}14; }}")
+        reglas.append(
+            f"{boton} {{ color: {graficos.texto_de(color)}; border-color: {color}; "
+            f"background: {graficos.fondo_suave(color, 8)}; }}"
+        )
         # aria-pressed en las de selección múltiple, aria-checked en las de una sola.
         reglas.append(
             f'{boton}[aria-pressed="true"], {boton}[aria-checked="true"] {{ color: #fff; background: {color}; }}'
         )
-    # Las de orden: la de abiertos, en el gris del texto, porque no es un estado; las demás, con
-    # el color de su estado en las pastillas del recuento y, como ellas, texto oscuro: amarillo
-    # y aqua no se leen como color de texto.
+    # Las de orden: la de abiertos, en el color del texto, porque no es un estado; las demás, con
+    # el color de su estado en las pastillas del recuento y, como ellas, el texto del tema:
+    # amarillo y aqua no se leen como color de texto.
     for i, color in enumerate([COLOR_ABIERTOS, *COLORES_ESTADO], start=1):
         boton = f".st-key-orden_lanzadera button:nth-child({i})"
-        reglas.append(f"{boton} {{ color: #31333F; border-color: {color}; background: {color}1f; }}")
+        reglas.append(
+            f"{boton} {{ color: {graficos.TEXTO}; border-color: {color}; background: {graficos.fondo_suave(color, 12)}; }}"
+        )
         # aria-pressed en las de selección múltiple, aria-checked en las de una sola. Streamlit
         # da su propio color al texto de la activa, también en el <p> de dentro: se fuerza el
-        # blanco sobre el color oscurecido.
+        # blanco sobre el color oscurecido. La de abiertos invierte los colores del tema.
         activo = f'{boton}[aria-pressed="true"], {boton}[aria-checked="true"]'
-        fondo = _oscurecer_para_blanco(color)
+        fondo, texto = (
+            (COLOR_ABIERTOS, "light-dark(#fff, #0E1117)")
+            if color == COLOR_ABIERTOS
+            else (_oscurecer_para_blanco(color), "#fff")
+        )
         reglas.append(f"{activo} {{ background: {fondo}; border-color: {fondo}; font-weight: 600; }}")
-        reglas.append(f"{activo}, {activo.replace(', ', ' *, ')} * {{ color: #fff !important; }}")
+        reglas.append(f"{activo}, {activo.replace(', ', ' *, ')} * {{ color: {texto} !important; }}")
     st.html("<style>\n" + "\n".join(reglas) + "\n</style>")
 
 
@@ -1041,7 +1052,7 @@ def render_proyectos() -> None:
 /* Las cabeceras ordenables son botones terciarios: en negrita y sin relleno, como GitHub. */
 .st-key-cabecera_lanzadera button { padding: 0; min-height: 0; }
 .st-key-cabecera_lanzadera button p { font-weight: 600; }
-[class*="st-key-fila_impar_"] { background: rgba(49, 51, 63, 0.05); }
+[class*="st-key-fila_impar_"] { background: light-dark(rgba(49, 51, 63, 0.05), rgba(250, 250, 250, 0.05)); }
 </style>"""
     )
     with st.container(key="tabla_lanzadera"):
@@ -1129,27 +1140,28 @@ def render_enlaces() -> None:
   body {{ font-family: -apple-system, Segoe UI, Roboto, sans-serif; }}
   #filtro {{
     width: 100%; padding: 10px; margin-bottom: 12px; font-size: 15px;
-    box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px;
+    box-sizing: border-box; border: 1px solid light-dark(#ccc, #4a4c57); border-radius: 6px;
   }}
   table {{ border-collapse: collapse; width: 100%; font-size: 14px; table-layout: fixed; }}
   th, td {{
-    border: 1px solid #ddd; padding: 6px 10px; text-align: left;
+    border: 1px solid light-dark(#ddd, #33353f); padding: 6px 10px; text-align: left;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }}
-  th {{ background: #f3f4f6; position: sticky; top: 0; cursor: default; }}
+  th {{ background: light-dark(#f3f4f6, #1A1C24); position: sticky; top: 0; cursor: default; }}
   td a {{ text-decoration: none; }}
   .col-descripcion {{ width: 30%; }}
   .col-enlace {{ width: 52%; }}
   .col-categoria {{ width: 18%; }}
-  tr:nth-child(even) {{ background: #fafafa; }}
-  tr:hover {{ background: #eef2ff; }}
+  tr:nth-child(even) {{ background: light-dark(#fafafa, #14171f); }}
+  tr:hover {{ background: light-dark(#eef2ff, #1e2433); }}
   .badge {{ color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; display: inline-block; margin: 1px 4px 1px 0; }}
-  #contador {{ font-size: 13px; color: #666; margin-bottom: 6px; }}
+  #contador {{ font-size: 13px; color: light-dark(#666, #a3a8b8); margin-bottom: 6px; }}
   .filtros-fila {{ margin-bottom: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }}
-  .filtros-fila .etiqueta {{ font-size: 12px; color: #888; margin-right: 2px; }}
+  .filtros-fila .etiqueta {{ font-size: 12px; color: light-dark(#888, #9a9ca8); margin-right: 2px; }}
   .filtro-categoria {{
     --color: #6b7280;
-    border: 1.5px solid var(--color); background: white; color: var(--color);
+    border: 1.5px solid var(--color); background: transparent;
+    color: light-dark(var(--color), color-mix(in srgb, var(--color), white 45%));
     padding: 4px 10px; border-radius: 12px; font-size: 13px; cursor: pointer;
     font-weight: 500; transition: all 0.1s ease-in-out;
   }}

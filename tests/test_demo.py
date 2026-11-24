@@ -195,6 +195,19 @@ def test_cortes_del_mapa_de_actividad_segun_los_datos(valores, esperado):
     assert graficos.cortes(valores) == esperado
 
 
+@pytest.mark.parametrize(("oscuro", "fondo", "vacio"), [(False, "white", "#ebedf0"), (True, "#0E1117", "#1f232b")])
+def test_el_mapa_de_actividad_sigue_al_tema(monkeypatch, oscuro, fondo, vacio):
+    # Vega no lee el CSS de la página: el hueco entre celdas y el gris del cero salen del tema.
+    monkeypatch.setattr(graficos, "_oscuro", lambda: oscuro)
+    spec = graficos.actividad({date(2026, 11, 2): 0, date(2026, 11, 3): 4}, "es", {"dia": "Día", "commits": "N"})
+    spec = spec.to_dict()
+    assert spec["mark"]["stroke"] == fondo
+    rampa = spec["encoding"]["color"]["scale"]["range"]
+    assert rampa[0] == vacio
+    # En oscuro, poca actividad es el azul más apagado, como en GitHub.
+    assert rampa[1] == (graficos.AZUL[-1] if oscuro else graficos.AZUL[1])
+
+
 @pytest.mark.parametrize(
     ("nombres", "maximo", "esperado"),
     [

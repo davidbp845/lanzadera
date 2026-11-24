@@ -9,6 +9,7 @@ from datetime import date, timedelta
 
 import altair as alt
 import pandas as pd
+import streamlit as st
 
 import github
 
@@ -16,11 +17,47 @@ import github
 COLORES_ESTADO = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]
 # Rampa secuencial azul (100 → 600) para el mapa de actividad; el cero va en gris.
 AZUL = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95"]
-VACIO = "#ebedf0"
 CATEGORIAS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
 # Estados del medidor; a partir de 80 % avisa con color, icono y texto, nunca solo con color.
-PISTA, NORMAL, SERIO, CRITICO = "#cde2fb", "#2a78d6", "#ec835a", "#d03b3b"
-TEXTO_SUAVE = "#5F6272"
+NORMAL, SERIO, CRITICO = "#2a78d6", "#ec835a", "#d03b3b"
+
+# El HTML propio sigue al tema con light-dark(): Streamlit fija color-scheme en la raíz de la
+# app, así que no hace falta saber en Python qué tema está activo. Primero el claro, luego el
+# oscuro (fondos #FFFFFF y #0E1117 de .streamlit/config.toml).
+TEXTO = "light-dark(#31333F, #FAFAFA)"
+TEXTO_SUAVE = "light-dark(#5F6272, #A3A8B8)"
+BORDE = "light-dark(rgba(49, 51, 63, 0.15), rgba(250, 250, 250, 0.2))"
+FONDO_CABECERA = "light-dark(#F7F8FA, #1A1C24)"
+PISTA = "light-dark(#cde2fb, #1c3553)"
+AVISO = "light-dark(#8a420b, #f0a35e)"
+ICONO_AVISO = "light-dark(#b5570f, #f0a35e)"
+
+
+def fondo_suave(color: str, pct: int) -> str:
+    """`color` al `pct` % sobre el fondo de la página: vale para un hex y para un light-dark()."""
+    return f"color-mix(in srgb, {color} {pct}%, transparent)"
+
+
+def texto_de(color: str) -> str:
+    """Un color de la paleta como texto: tal cual en claro y aclarado en oscuro, donde el violeta
+    o el verde no llegan a 4,5:1 sobre el fondo."""
+    return f"light-dark({color}, color-mix(in srgb, {color}, white 45%))"
+
+
+def _oscuro() -> bool:
+    # Vega pinta en canvas y no lee CSS: los colores de los gráficos salen del tema activo.
+    return st.context.theme.type == "dark"
+
+
+def _fondo() -> str:
+    # Separa tramos y celdas con el color de la página, como un hueco.
+    return "#0E1117" if _oscuro() else "white"
+
+
+def _texto_suave() -> str:
+    return "#A3A8B8" if _oscuro() else "#5F6272"
+
+
 MESES = {
     "es": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
     "en": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -30,7 +67,7 @@ DIAS = {"es": ["L", "", "X", "", "V", "", ""], "en": ["Mon", "", "Wed", "", "Fri
 
 def _ejes(chart: alt.Chart) -> alt.Chart:
     return chart.configure_view(stroke=None).configure_axis(
-        grid=False, domain=False, ticks=False, labelColor=TEXTO_SUAVE, labelFontSize=13
+        grid=False, domain=False, ticks=False, labelColor=_texto_suave(), labelFontSize=13
     )
 
 
@@ -97,7 +134,7 @@ def por_estado(
     y = alt.Y("proyecto:N", sort=orden, title=None, axis=alt.Axis(labelLimit=260))
     barras = (
         alt.Chart(df)
-        .mark_bar(height=16, stroke="white", strokeWidth=2, cornerRadius=2)
+        .mark_bar(height=16, stroke=_fondo(), strokeWidth=2, cornerRadius=2)
         .encode(
             x=alt.X("sum(n):Q", title=None, axis=None),
             y=y,
@@ -117,7 +154,9 @@ def por_estado(
         )
     )
     totales = (
-        alt.Chart(total).mark_text(align="left", dx=6, color=TEXTO_SUAVE, fontSize=13).encode(x="n:Q", y=y, text="n:Q")
+        alt.Chart(total)
+        .mark_text(align="left", dx=6, color=_texto_suave(), fontSize=13)
+        .encode(x="n:Q", y=y, text="n:Q")
     )
     return _ejes((barras + totales).properties(height=alt.Step(28)))
 
@@ -125,7 +164,7 @@ def por_estado(
 def leyenda(nombres: list[str], colores: list[str]) -> str:
     """Leyenda de una sola fila que se parte en varias si no cabe, alineada a la izquierda."""
     return (
-        '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:0.8rem;color:#5F6272">'
+        f'<div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:0.8rem;color:{TEXTO_SUAVE}">'
         + "".join(
             f'<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;'
             f'background:{color}"></span>{html.escape(nombre)}</span>'
@@ -164,11 +203,13 @@ def actividad(commits: dict[date, int], idioma: str, ejes: dict[str, str]) -> al
             for d, n in sorted(commits.items())
         ]
     )
+    # En oscuro la rampa se invierte, como en GitHub: poca actividad, el azul más apagado.
+    vacio, rampa = ("#1f232b", AZUL[:0:-1]) if _oscuro() else ("#ebedf0", AZUL[1:])
     meses = str(MESES[idioma])
     dias = str(DIAS[idioma])
     return _ejes(
         alt.Chart(df)
-        .mark_rect(cornerRadius=2, stroke="white", strokeWidth=2)
+        .mark_rect(cornerRadius=2, stroke=_fondo(), strokeWidth=2)
         .encode(
             x=alt.X(
                 "semana:O",
@@ -184,7 +225,7 @@ def actividad(commits: dict[date, int], idioma: str, ejes: dict[str, str]) -> al
             y=alt.Y("dia_semana:O", title=None, axis=alt.Axis(labelExpr=f"{dias}[datum.value]")),
             color=alt.Color(
                 "commits:Q",
-                scale=alt.Scale(type="threshold", domain=cortes(list(commits.values())), range=[VACIO, *AZUL[1:]]),
+                scale=alt.Scale(type="threshold", domain=cortes(list(commits.values())), range=[vacio, *rampa]),
                 legend=None,
             ),
             tooltip=[
@@ -213,7 +254,7 @@ def ram_por_proyecto(proyectos: list[dict], ejes: dict[str, str], formatear) -> 
     y = alt.Y("proyecto:N", sort=[m["nombre"] for m in proyectos], title=None, axis=alt.Axis(labelLimit=160))
     barras = (
         alt.Chart(df)
-        .mark_bar(height=16, stroke="white", strokeWidth=2, cornerRadius=2)
+        .mark_bar(height=16, stroke=_fondo(), strokeWidth=2, cornerRadius=2)
         .encode(
             x=alt.X("sum(mb):Q", title=None, axis=None),
             y=y,
@@ -228,7 +269,7 @@ def ram_por_proyecto(proyectos: list[dict], ejes: dict[str, str], formatear) -> 
     )
     totales = (
         alt.Chart(total)
-        .mark_text(align="left", dx=6, color=TEXTO_SUAVE, fontSize=13)
+        .mark_text(align="left", dx=6, color=_texto_suave(), fontSize=13)
         .encode(x="mb:Q", y=y, text="ram:N")
     )
     return _ejes((barras + totales).properties(height=alt.Step(28)))
@@ -250,7 +291,7 @@ def tarjeta(titulo: str, valor: str, detalle: str = "", pct: float | None = None
         if pct >= 80 and aviso:
             detalle = f"{aviso} · {detalle}"
     return (
-        '<div style="border:1px solid rgba(49,51,63,0.15);border-radius:0.5rem;padding:0.8rem 1rem;height:100%;'
+        f'<div style="border:1px solid {BORDE};border-radius:0.5rem;padding:0.8rem 1rem;height:100%;'
         'box-sizing:border-box">'
         f'<div style="font-size:0.875rem;color:{TEXTO_SUAVE}">{html.escape(titulo)}</div>'
         f'<div style="font-size:2rem;font-weight:600;line-height:1.3;font-variant-numeric:tabular-nums;'
@@ -267,7 +308,7 @@ def puertos(estado: list[tuple[int, str, bool]]) -> str:
         + "".join(
             f'<span title="{html.escape(nombre)}" style="font-family:\'Source Code Pro\',monospace;font-size:0.8rem;'
             f"padding:2px 8px;border-radius:6px;border:1px solid "
-            f'{"#21A366;background:#21A36614" if activo else "rgba(49,51,63,0.15)"}">{puerto}</span>'
+            f'{"#21A366;background:#21A36614" if activo else BORDE}">{puerto}</span>'
             for puerto, nombre, activo in sorted(estado)
         )
         + "</div>"
@@ -282,10 +323,10 @@ ABIERTO = "#1baf7a"
 
 
 def _pildora(texto: str, color: str) -> str:
-    # Texto oscuro sobre el color aclarado, como las pastillas del tablero.
+    # Texto del tema sobre el color aclarado, como las pastillas del tablero.
     return (
-        f'<span style="display:inline-block;padding:1px 10px;border-radius:999px;background:{color}4d;'
-        f'color:#31333F;font-size:0.8rem;font-weight:600;white-space:nowrap">{html.escape(texto)}</span>'
+        f'<span style="display:inline-block;padding:1px 10px;border-radius:999px;background:{fondo_suave(color, 30)};'
+        f'color:{TEXTO};font-size:0.8rem;font-weight:600;white-space:nowrap">{html.escape(texto)}</span>'
     )
 
 
@@ -296,13 +337,13 @@ def _issue(issue: dict, titulos: dict[str, str]) -> str:
         ""
         if abierto is None
         else f'<span style="width:8px;height:8px;border-radius:50%;display:inline-block;'
-        f'background:{ABIERTO if abierto else "#ffffff"};border:1px solid {ABIERTO if abierto else TEXTO_SUAVE}"></span>'
+        f'background:{ABIERTO if abierto else "transparent"};border:1px solid {ABIERTO if abierto else TEXTO_SUAVE}"></span>'
     )
     titulo = "" if abierto is None else titulos["abierto" if abierto else "cerrado"]
     return (
         f'<a href="{html.escape(issue["url"])}" target="_blank" title="{html.escape(titulo)}" '
         'style="display:inline-flex;align-items:center;gap:5px;font-size:0.85rem;text-decoration:none;'
-        "border:1px solid rgba(49,51,63,0.15);border-radius:999px;padding:0 9px 0 7px;color:#31333F;"
+        f"border:1px solid {BORDE};border-radius:999px;padding:0 9px 0 7px;color:inherit;"
         f'white-space:nowrap">{punto}{html.escape(issue["ref"])}</a>'
     )
 
@@ -379,7 +420,7 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
         # Cabecera fija: la tabla hace scroll dentro de su caja.
         return (
             f'<th scope="col"{orden} style="{celda};font-weight:600;text-align:left;position:sticky;top:0;'
-            f'background:#F7F8FA">{texto}</th>'
+            f'background:{FONDO_CABECERA}">{texto}</th>'
         )
 
     cabecera = "".join(_cabecera(c) for c in columnas)
@@ -388,12 +429,12 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
         numero = html.escape(f["numero"])
         if f["url"]:
             numero = f'<a href="{html.escape(f["url"])}" target="_blank">{numero}</a>'
-        aviso = f'<div style="color:#8a420b;font-size:0.85rem">⚠ {html.escape(f["aviso"])}</div>' if f["aviso"] else ""
+        aviso = f'<div style="color:{AVISO};font-size:0.85rem">⚠ {html.escape(f["aviso"])}</div>' if f["aviso"] else ""
         issues = "".join(_issue(i, textos) for i in f["issues"]) or f'<span style="color:{TEXTO_SUAVE}">—</span>'
         nombre = html.escape(f["proyecto"])
         proyecto = f'<td data-orden="{nombre}" style="{celda}">{nombre}</td>' if con_proyecto else ""
         cuerpo.append(
-            f'<tr data-i="{i}" style="border-top:1px solid rgba(49,51,63,0.1)">'
+            f'<tr data-i="{i}" style="border-top:1px solid {BORDE}">'
             f"{proyecto}"
             f'<td data-orden="{int(f["numero"]) if f["numero"].isdigit() else 0}" '
             f"style=\"{celda};font-family:'Source Code Pro',monospace;font-size:0.85rem\">{numero}</td>"
@@ -404,9 +445,9 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
             "</tr>"
         )
     return (
-        '<div style="overflow:auto;max-height:60vh;border:1px solid rgba(49,51,63,0.15);border-radius:0.5rem">'
+        f'<div style="overflow:auto;max-height:60vh;border:1px solid {BORDE};border-radius:0.5rem">'
         '<table class="tabla-adr" style="width:100%;min-width:640px;border-collapse:collapse;font-size:0.9rem">'
-        f'<thead><tr style="background:#F7F8FA;color:{TEXTO_SUAVE};font-size:0.85rem">{cabecera}</tr></thead>'
+        f'<thead><tr style="background:{FONDO_CABECERA};color:{TEXTO_SUAVE};font-size:0.85rem">{cabecera}</tr></thead>'
         f"<tbody>{''.join(cuerpo)}</tbody></table></div>"
         f"{_ORDENAR_ADR}"
     )
@@ -415,8 +456,9 @@ def tabla_adr(filas: list[dict], textos: dict[str, str], con_proyecto: bool = Fa
 def revisar_adr(avisos: list[tuple[str, str, str, str]]) -> str:
     """Lista de `(proyecto, número, decisión, motivo)` de las ADR cuyo estado no cuadra con sus issues."""
     icono = (
-        '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b5570f" '
-        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px">'
+        '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" '
+        'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '
+        f'style="flex:none;margin-top:3px;stroke:{ICONO_AVISO}">'
         '<path d="M12 3 2 21h20L12 3z"></path><path d="M12 10v5"></path><path d="M12 18h.01"></path></svg>'
     )
     return (
