@@ -1,0 +1,21 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verificacion:
+    uses: davidbp845/metodo/.github/workflows/verificacion.yml@main
+    permissions:
+      contents: write
+    with:
+      python-version: "3.14"
+      instalar: pip install -r requirements.txt -r requirements-dev.txt
+      verificacion: |
+        python -m pytest
+        ruff check .
+        ruff format --check .
