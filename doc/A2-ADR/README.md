@@ -30,4 +30,4 @@ Salvo la 0001 y la 0004 (tomadas al aplicar la metodología), recogen decisiones
 | [0020](0020-pagina-adr-estado-de-las-decisiones.md) | Página ADR: estado de las decisiones leído de `doc/A2-ADR/` de cada proyecto; la implementación, de sus issues | Aceptada |
 | [0021](0021-github-de-la-carpeta-del-repositorio.md) | GitHub de cada fila desde la carpeta de su repositorio: cada negocio, la suya; clave `ruta_github` para los proyectos que arrancan desde otra carpeta | Aceptada |
 | [0022](0022-tipo-en-cada-enlace.md) | Clave `tipo` opcional en cada enlace: la fila sale con el tipo de cualquiera de sus enlaces y, con un filtro de tipo, solo muestra los enlaces de ese tipo | Aceptada |
-| [0023](0023-prioridad-de-cada-fila.md) | Prioridad de 1 a 5 de cada fila en `datos/prioridades.toml`, escrita desde el panel con flechas ↑/↓ | Propuesta |
+| [0023](0023-prioridad-de-cada-fila.md) | Prioridad de 1 a 5 de cada fila en `datos/prioridades.toml`, escrita desde el panel con flechas ↑/↓ | Aceptada |

@@ -31,4 +31,4 @@ Hasta ahora el panel solo lee `datos/`. Una prioridad que dure entre sesiones ob
 
 ## Estado
 
-Propuesta (2026-11-26) — issue [#22](https://github.com/davidbp845/lanzadera/issues/22).
+Aceptada (2026-11-26) — issue [#22](https://github.com/davidbp845/lanzadera/issues/22).
