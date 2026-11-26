@@ -205,6 +205,91 @@ def cargar_enlaces() -> pd.DataFrame:
 # Prioridad, lo justo para «↑ 5 ↓» cuando la tabla se ordena por ella.
 COLUMNAS_LANZADERA = [2.4, 1, 0.8, 1.2, 1.6, 4, 0.6]
 
+# Anchos de la tabla (no de la ventana) a partir de los que se ve el ancho intermedio y el de
+# escritorio; por debajo, el móvil (#24).
+ANCHO_INTERMEDIO = 640
+ANCHO_ESCRITORIO = 880
+_PESOS_ESCRITORIO = "\n".join(
+    f'  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child({i}) '
+    f"{{ display: flex; flex: {peso} 1 0; }}"
+    for i, peso in enumerate(COLUMNAS_LANZADERA, start=1)
+)
+# Streamlit no tiene tablas con widgets dentro: cada fila es un contenedor con key, y
+# su clase st-key-<key> permite el fondo de cabecera y el efecto cebra.
+ESTILO_TABLA_LANZADERA = f"""<style>
+.st-key-cabecera_lanzadera, [class*="st-key-fila_par_"], [class*="st-key-fila_impar_"] {{
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.4rem;
+  gap: 0;
+}}
+/* Streamlit compensa el margen del párrafo con un margin-bottom negativo; en la celda de
+   GitHub (HTML, sin párrafo) eso descuadra el centrado y la saca del fondo de la fila. */
+.st-key-cabecera_lanzadera [data-testid="stMarkdownContainer"],
+[class*="st-key-fila_"] [data-testid="stMarkdownContainer"] {{ margin-bottom: 0; }}
+.st-key-cabecera_lanzadera [data-testid="stMarkdownContainer"] p,
+[class*="st-key-fila_"] [data-testid="stMarkdownContainer"] p {{ margin: 0; }}
+/* Sin hueco entre filas: si no, las blancas parecen más altas que las de la cebra. */
+.st-key-tabla_lanzadera {{ gap: 0; }}
+/* Prioridad, puerto, estado e interruptor no se parten ("850" / "1"). */
+[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(2),
+[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(3),
+[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(4),
+[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(7),
+.st-key-cabecera_lanzadera [data-testid="stColumn"] {{ white-space: nowrap; }}
+/* Una línea por proyecto a cualquier ancho: Streamlit deja saltar las columnas y, por debajo
+   de 640 px de ventana, las apila. Los cortes van por el ancho de la tabla, no de la ventana
+   (el menú lateral ocupa 300 px), y en cada uno se fija el ancho de cada columna.
+   Móvil: nombre · punto de estado y «abrir» · interruptor. */
+.st-key-tabla_lanzadera {{ container-type: inline-size; }}
+:is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"]) {{
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}}
+:is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"] {{ min-width: 0; width: auto; }}
+:is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(1) {{ flex: 1 1 0; }}
+:is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(4) {{ flex: 0 0 4.5rem; }}
+:is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(7) {{ flex: 0 0 3.5rem; }}
+:is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(5), :nth-child(6)) {{ display: none; }}
+.st-key-cabecera_lanzadera [data-testid="stColumn"]:nth-child(4) > * {{ visibility: hidden; }}
+.st-key-tabla_lanzadera .estado-texto {{ display: none; }}
+/* GitHub: enlaces y pastillas, cada grupo sin partir; si no caben, las pastillas bajan enteras
+   en vez de pisar el interruptor. Display y nowrap van aquí y no en línea para que cada ancho
+   pueda cambiarlos. */
+.st-key-tabla_lanzadera .pastilla {{ display: inline-block; }}
+.st-key-tabla_lanzadera :is(.gh-enlaces, .gh-pastillas) {{ white-space: nowrap; }}
+/* Intermedio: vuelven la prioridad, el texto del estado, los enlaces y GitHub, este sin
+   «repositorio · tablero» ni pastillas a cero. */
+@container (min-width: {ANCHO_INTERMEDIO}px) {{
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"]) {{ gap: 0.75rem; }}
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(1) {{ flex: 1.2 1 0; }}
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(2) {{ display: flex; flex: 0 0 5.5rem; }}
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(4) {{ flex: 0 0 6.5rem; }}
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(5) {{ display: flex; flex: 1.2 1 0; }}
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(6) {{ display: flex; flex: 1.8 1 0; }}
+  .st-key-cabecera_lanzadera [data-testid="stColumn"]:nth-child(4) > * {{ visibility: visible; }}
+  .st-key-tabla_lanzadera .estado-texto {{ display: inline; }}
+  .st-key-tabla_lanzadera .abrir-movil,
+  .st-key-tabla_lanzadera .gh-enlaces,
+  .st-key-tabla_lanzadera .pastilla-cero {{ display: none; }}
+  .st-key-tabla_lanzadera .gh-pastillas {{ white-space: normal; }}
+}}
+/* Escritorio: todas las columnas, con los pesos de COLUMNAS_LANZADERA. */
+@container (min-width: {ANCHO_ESCRITORIO}px) {{
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"]) {{ gap: 1rem; }}
+{_PESOS_ESCRITORIO}
+  .st-key-tabla_lanzadera .gh-enlaces {{ display: inline; }}
+  .st-key-tabla_lanzadera .pastilla-cero {{ display: inline-block; }}
+  .st-key-tabla_lanzadera .gh-pastillas {{ white-space: nowrap; }}
+  /* «esta app» no se parte y la columna, la más estrecha, se quedaría corta. */
+  :is(.st-key-cabecera_lanzadera, [class*="st-key-fila_"]) [data-testid="stColumn"]:nth-child(7) {{ min-width: 3rem; }}
+}}
+.st-key-cabecera_lanzadera {{ background: rgba(246, 51, 102, 0.12); }}
+/* Las cabeceras ordenables son botones terciarios: en negrita y sin relleno, como GitHub. */
+.st-key-cabecera_lanzadera button {{ padding: 0; min-height: 0; }}
+.st-key-cabecera_lanzadera button p {{ font-weight: 600; }}
+[class*="st-key-fila_impar_"] {{ background: light-dark(rgba(49, 51, 63, 0.05), rgba(250, 250, 250, 0.05)); }}
+</style>"""
+
 
 @st.cache_data(ttl=3600)
 def _github(path: str) -> tuple[str | None, tuple[str, int] | None]:
@@ -273,11 +358,12 @@ def _pastillas(cuenta: dict) -> str:
         texto, fondo = (
             (graficos.TEXTO, graficos.fondo_suave(color, 30)) if cuenta[estado] else (GRIS_ESTADO, "#8a8a8a1a")
         )
-        titulo, clase = estado, ""
+        titulo, clases = estado, ["pastilla"] if cuenta[estado] else ["pastilla", "pastilla-cero"]
         if estado == "In progress" and en_curso:
-            titulo, clase = f"{estado} · {t('en_curso')}: {', '.join(en_curso)}", ' class="latido"'
+            titulo = f"{estado} · {t('en_curso')}: {', '.join(en_curso)}"
+            clases.append("latido")
         pastillas.append(
-            f'<span{clase} title="{html.escape(titulo)}" style="display:inline-block;min-width:2.1em;'
+            f'<span class="{" ".join(clases)}" title="{html.escape(titulo)}" style="min-width:2.1em;'
             f"margin-left:0.3em;padding:0.1em 0.45em;border-radius:0.6em;text-align:center;font-weight:600;"
             f'font-variant-numeric:tabular-nums;color:{texto};background:{fondo}">{cuenta[estado]}</span>'
         )
@@ -330,11 +416,11 @@ def _pintar_github(columna, path: Path | None) -> None:
     if not any(partes):
         columna.markdown(":gray[—]")
         return
-    # Enlaces y pastillas, cada uno sin partir: en una línea si caben y, si no, las
-    # pastillas bajan enteras en vez de pisar el interruptor.
-    texto = f'<span style="white-space:nowrap">{" · ".join(p for p in partes if p)}</span>'
+    # Enlaces y pastillas en grupos aparte: el CSS de la tabla decide en cada ancho cuáles se ven
+    # y si las pastillas pueden partirse (ESTILO_TABLA_LANZADERA).
+    texto = f'<span class="gh-enlaces">{" · ".join(p for p in partes if p)}</span>'
     if tablero and (cuenta := _recuentos(_tableros()).get(tablero)):
-        texto += f'<span style="white-space:nowrap">{_pastillas(cuenta)}</span>'
+        texto += f'<span class="gh-pastillas">{_pastillas(cuenta)}</span>'
     columna.markdown(f"<div>{texto}</div>", unsafe_allow_html=True)
 
 
@@ -398,6 +484,23 @@ def _pintar_enlaces(columna, enlaces: list[tuple[str, str]]) -> None:
         columna.markdown(" · ".join(_sin_enlace(e, t("demo.enlace")) for e, _url in enlaces), unsafe_allow_html=True)
     else:
         columna.markdown(" · ".join(f"[{etiqueta}]({url})" for etiqueta, url in enlaces))
+
+
+def _pintar_estado(columna, texto: str, abrir: str | None = None) -> None:
+    # El punto y el texto van en piezas aparte para que el CSS de la tabla quite el texto en el
+    # móvil (queda el punto, con el texto de tooltip), y allí también aparece «abrir» (#24).
+    punto, nombre = texto.split(" ", 1)
+    piezas = (
+        f'<span title="{html.escape(nombre)}">{punto}</span><span class="estado-texto"> {html.escape(nombre)}</span>'
+    )
+    if abrir:
+        enlace = (
+            _sin_enlace(t("enlace.abrir"), t("demo.enlace"))
+            if DEMO
+            else f'<a href="{html.escape(abrir)}" target="_blank">{t("enlace.abrir")}</a>'
+        )
+        piezas += f'<span class="abrir-movil"> {enlace}</span>'
+    columna.markdown(piezas, unsafe_allow_html=True)
 
 
 def _interruptor(key: str, on_change, ayuda: str | None = None, deshabilitado: bool = False, **valor) -> None:
@@ -543,13 +646,18 @@ def _render_proyecto(proyecto: dict, activo: bool | None, tipo_fila: str | None 
     # Sin puerto pero con proceso (ADR-0017): estado e interruptor, sin puerto ni enlace que abrir.
     puerto.markdown(":gray[—]" if proyecto["puerto"] is None else str(proyecto["puerto"]))
 
+    lista = [
+        (enlace[0], url_enlace(enlace))
+        for enlace in _enlaces_del_tipo(_enlaces_proyecto(proyecto, activo), tipo_fila, tipos)
+    ]
+    abrir = lista[0][1] if lista and activo else None
     if proyecto["cmd"] is None:
-        estado.markdown(t("estado.activa"))
+        _pintar_estado(estado, t("estado.activa"))
     else:
-        estado.markdown(t("estado.activo") if activo else t("estado.parado"))
+        _pintar_estado(estado, t("estado.activo") if activo else t("estado.parado"), abrir)
 
-    if lista := _enlaces_del_tipo(_enlaces_proyecto(proyecto, activo), tipo_fila, tipos):
-        _pintar_enlaces(enlaces, [(enlace[0], url_enlace(enlace)) for enlace in lista])
+    if lista:
+        _pintar_enlaces(enlaces, lista)
 
     _pintar_github(enlaces_github, proyecto["path_github"])
 
@@ -649,7 +757,7 @@ def _render_negocios_todos(negocios: list[dict], activos: list[dict]) -> None:
     )
     nombre.markdown(f"**{t('todos_negocios')}**")
     _pintar_prioridad(prioridad, SLUG_NEGOCIOS)
-    estado.markdown(t("estado.activo") if activos else t("estado.parado"))
+    _pintar_estado(estado, t("estado.activo") if activos else t("estado.parado"))
     enlaces.markdown(", ".join(n["id"] for n in activos))
     _pintar_github(enlaces_github, HERUKA_FLOW)
     with interruptor:
@@ -678,12 +786,12 @@ def _render_negocio(negocio: dict, negocios: list[dict], activos: list[dict], ti
     nombre.markdown(f"**{t('negocio', id=negocio['id'])}**")
     _pintar_prioridad(prioridad, negocio["id"])
     puerto.markdown(str(negocio["panel"]))
-    estado.markdown(t("estado.activo") if activo else t("estado.parado"))
+    lista = [(e[0], url_enlace(e)) for e in _enlaces_del_tipo(_enlaces_negocio(negocio), TIPO_NEGOCIOS, tipos)]
+    _pintar_estado(
+        estado, t("estado.activo") if activo else t("estado.parado"), lista[0][1] if activo and lista else None
+    )
     if activo:
-        _pintar_enlaces(
-            enlaces,
-            [(e[0], url_enlace(e)) for e in _enlaces_del_tipo(_enlaces_negocio(negocio), TIPO_NEGOCIOS, tipos)],
-        )
+        _pintar_enlaces(enlaces, lista)
     _pintar_github(enlaces_github, _carpeta_negocio(negocio))
     with interruptor:
         key = f"switch_negocio_{negocio['id']}"
@@ -1053,36 +1161,7 @@ def render_proyectos() -> None:
     ]
     contador.caption(" · ".join([t("contador", n=len(visibles), total=len(filas)), *filter(None, activos)]))
 
-    # Streamlit no tiene tablas con widgets dentro: cada fila es un contenedor con key, y
-    # su clase st-key-<key> permite el fondo de cabecera y el efecto cebra (tema claro fijo).
-    st.html(
-        """<style>
-.st-key-cabecera_lanzadera, [class*="st-key-fila_par_"], [class*="st-key-fila_impar_"] {
-  padding: 0.55rem 0.6rem;
-  border-radius: 0.4rem;
-  gap: 0;
-}
-/* Streamlit compensa el margen del párrafo con un margin-bottom negativo; en la celda de
-   GitHub (HTML, sin párrafo) eso descuadra el centrado y la saca del fondo de la fila. */
-.st-key-cabecera_lanzadera [data-testid="stMarkdownContainer"],
-[class*="st-key-fila_"] [data-testid="stMarkdownContainer"] { margin-bottom: 0; }
-.st-key-cabecera_lanzadera [data-testid="stMarkdownContainer"] p,
-[class*="st-key-fila_"] [data-testid="stMarkdownContainer"] p { margin: 0; }
-/* Sin hueco entre filas: si no, las blancas parecen más altas que las de la cebra. */
-.st-key-tabla_lanzadera { gap: 0; }
-/* Prioridad, puerto, estado e interruptor no se parten en pantallas estrechas ("850" / "1"). */
-[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(2),
-[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(3),
-[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(4),
-[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(7),
-.st-key-cabecera_lanzadera [data-testid="stColumn"] { white-space: nowrap; }
-.st-key-cabecera_lanzadera { background: rgba(246, 51, 102, 0.12); }
-/* Las cabeceras ordenables son botones terciarios: en negrita y sin relleno, como GitHub. */
-.st-key-cabecera_lanzadera button { padding: 0; min-height: 0; }
-.st-key-cabecera_lanzadera button p { font-weight: 600; }
-[class*="st-key-fila_impar_"] { background: light-dark(rgba(49, 51, 63, 0.05), rgba(250, 250, 250, 0.05)); }
-</style>"""
-    )
+    st.html(ESTILO_TABLA_LANZADERA)
     with st.container(key="tabla_lanzadera"):
         with st.container(key="cabecera_lanzadera"):
             *columnas, github_col, interruptor = st.columns(COLUMNAS_LANZADERA, vertical_alignment="center")
