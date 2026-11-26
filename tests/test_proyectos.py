@@ -103,8 +103,9 @@ def test_rutas_por_defecto_y_por_entorno(monkeypatch, tmp_path):
     assert paths.enlaces() == tmp_path / "enlaces.csv"
 
 
-def test_el_registro_real_carga():
+def test_el_registro_real_carga(monkeypatch):
     # Lee ../datos solo para validar su formato; no comprueba su contenido.
+    monkeypatch.delenv("HOME_LAUNCHER_DATOS", raising=False)
     if not paths.proyectos().exists():
         pytest.skip("sin contenedor de datos")
     registro = cargar()

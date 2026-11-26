@@ -4,6 +4,7 @@ from pathlib import Path
 
 import psutil
 import pytest
+from conftest import ir_a
 from streamlit.testing.v1 import AppTest
 
 import ram
@@ -172,7 +173,7 @@ def test_pagina_local_mide_al_entrar_y_al_recalcular(monkeypatch, proyectos, gpu
     monkeypatch.setattr(ram, "consultar", consultar)
     at = AppTest.from_file(str(Path(__file__).parent.parent / "app.py"), default_timeout=30)
     at.run()
-    at.sidebar.radio[0].set_value("Local").run()
+    ir_a(at, "local")
     assert not at.exception
     tabla = at.dataframe[0].value
     assert list(tabla["Proyecto"]) == ["Multi", "Simple", "Esta app", "Total"]

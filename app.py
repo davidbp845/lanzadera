@@ -25,7 +25,6 @@ from config.proyectos import cargar as cargar_registro
 from config.proyectos import url_enlace
 from config.vps import cargar as cargar_servidores
 
-MENU = ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
 # Demo pública de solo lectura (ADR-0010): nada de lo que consulta el sistema se ejecuta;
 # cada función que lo haría devuelve los datos de demo.py.
 DEMO = paths.demo()
@@ -46,8 +45,12 @@ def _numero(texto: str) -> str:
     return texto if _idioma() == "es" else texto.replace(",", ".")
 
 
+# En la demo, DEMO en la pestaña para no confundirla con el panel de verdad abierto al lado.
+TITULO_APP = f"{t('app.nombre')} DEMO" if DEMO else t("app.nombre")
 # Todas las páginas en ancho: tablas, rejilla del VPS, gráficos y los enlaces completos.
-st.set_page_config(page_title=t("pagina.Lanzadera"), page_icon="🏠", layout="wide")
+st.set_page_config(page_title=TITULO_APP, page_icon=":material/rocket_launch:", layout="wide")
+# Streamlit pinta las leyendas semitransparentes; sin opción de tema para la opacidad.
+st.html('<style>.stMarkdown [data-testid="stCaptionContainer"] { opacity: 1; }</style>')
 
 # El registro de proyectos y los enlaces son datos del contenedor (../datos), no
 # código (ADR-0001); aquí solo se cargan.
@@ -281,59 +284,16 @@ def _pastillas(cuenta: dict) -> str:
     return "".join(pastillas)
 
 
-# st.text_input solo avisa al pulsar Intro o salir del campo; este buscador manda el
-# texto mientras se escribe (con una pausa corta para no repintar en cada tecla), como
-# el de Enlaces, que filtra en el navegador pero no puede alojar los st.toggle.
-_BUSCADOR = st.components.v2.component(
-    "buscador_lanzadera",
-    html="""
-<input type="search" autocomplete="off" />
-""",
-    css="""
-input {
-  box-sizing: border-box;
-  width: 100%;
-  height: 2.5rem;
-  padding: 0 0.75rem;
-  font: inherit;
-  color: var(--st-text-color);
-  background: var(--st-secondary-background-color);
-  border: 1px solid transparent;
-  border-radius: var(--st-base-radius);
-  outline: none;
-}
-input:focus {
-  border-color: var(--st-primary-color);
-}
-""",
-    js="""
-export default function (component) {
-  const { data, parentElement, setStateValue } = component
-  const input = parentElement.querySelector("input")
-  if (!input) return
-  input.placeholder = data.placeholder
-  // Solo se reescribe si cambia desde Python, para no pelear con el cursor.
-  if (document.activeElement !== input && input.value !== data.value) input.value = data.value
-  let espera
-  input.oninput = () => {
-    clearTimeout(espera)
-    espera = setTimeout(() => setStateValue("value", input.value), 250)
-  }
-  return () => clearTimeout(espera)
-}
-""",
-)
-
-
 def _buscar(key: str, placeholder: str) -> str:
-    valor = st.session_state.get(key, {}).get("value", "")
-    resultado = _BUSCADOR(
+    return st.text_input(
+        t("buscar"),
+        type="search",
+        live=True,
+        placeholder=placeholder,
+        label_visibility="collapsed",
         key=key,
-        data={"value": valor, "placeholder": placeholder},
-        default={"value": valor},
-        on_value_change=lambda: None,
+        width=320,
     )
-    return resultado.value or ""
 
 
 ESTADOS = ["activo", "parado"]
@@ -1004,7 +964,7 @@ def _ordenar_por_columna(filas: list[dict], clave: str, sentido: str) -> list[di
 
 
 def render_proyectos() -> None:
-    st.title(t("pagina.Lanzadera"))
+    st.title(t("pagina.Lanzadera"), anchor=False)
     _aviso_demo()
 
     filas = _filas_lanzadera()
@@ -1029,17 +989,18 @@ def render_proyectos() -> None:
             format_func=lambda o: t(f"filtro.{o}") if o in ESTADOS else o,
             label_visibility="collapsed",
             key="filtros_lanzadera",
+            bind="query-params",
             width="content",
         )
     estados = [o for o in seleccion if o in ESTADOS]
     carpetas = [o for o in seleccion if o in carpetas_filas]
     tipos = [o for o in seleccion if o in tipos_filas]
 
-    buscado = texto.strip().lower()
+    buscado = texto.strip().casefold()
     visibles = [
         f
         for f in filas
-        if (not buscado or buscado in f["texto"].lower())
+        if (not buscado or buscado in f["texto"].casefold())
         and (not carpetas or f["carpeta"] in carpetas)
         and (not tipos or f["tipos"] & set(tipos))
         # Una fila sin estado (proyecto sin app) no es ni activa ni parada.
@@ -1163,7 +1124,7 @@ def _parse_etiquetas(categoria: str) -> list[str]:
 
 
 def render_enlaces() -> None:
-    st.title(t("pagina.Enlaces"))
+    st.title(t("pagina.Enlaces"), anchor=False)
     _aviso_demo()
 
     df = cargar_enlaces()
@@ -1343,7 +1304,7 @@ def _medidores_vps(secciones: list[tuple[str, str]]) -> None:
 
 
 def render_vps() -> None:
-    st.title(t("pagina.VPS"))
+    st.title(t("pagina.VPS"), anchor=False)
     _aviso_demo()
 
     servidores = cargar_servidores()
@@ -1424,7 +1385,7 @@ def _puertos_registro() -> list[tuple[int, str, bool]]:
 
 
 def render_local() -> None:
-    st.title(t("pagina.Local"))
+    st.title(t("pagina.Local"), anchor=False)
     _aviso_demo()
 
     # Igual que VPS: se mide al entrar por primera vez y al recalcular, no en cada rerun.
@@ -1621,8 +1582,15 @@ def _nombre_estado(estado: str | None) -> str:
     return t(f"adr.estado.{estado}" if estado else "adr.estado.sin")
 
 
+def _proyecto_adr_a_url() -> None:
+    if st.session_state["adr_proyecto"] is None:
+        st.query_params.pop("proyecto", None)
+    else:
+        st.query_params["proyecto"] = st.session_state["adr_proyecto"]
+
+
 def render_adr() -> None:
-    st.title(t("pagina.ADR"))
+    st.title(t("pagina.ADR"), anchor=False)
     _aviso_demo()
     grupos = _adrs_por_carpeta()
     if not grupos:
@@ -1695,15 +1663,21 @@ def render_adr() -> None:
     )
 
     opciones = {p["carpeta"]: (nombres_grupo, p) for nombres_grupo, p in grupos}
+    # Sin bind: la URL guardaría la etiqueta, que lleva el número de ADR y cambia con él. La
+    # carpeta va en la URL a mano y solo inicializa el widget la primera vez.
+    if "adr_proyecto" not in st.session_state:
+        st.session_state["adr_proyecto"] = (
+            st.query_params.get("proyecto") if st.query_params.get("proyecto") in opciones else None
+        )
     with st.container(horizontal=True, vertical_alignment="center"):
         texto = _buscar("buscar_adr", t("buscar.adr"))
         elegido = st.selectbox(
             t("adr.proyecto"),
             list(opciones),
-            index=None,
             placeholder=t("adr.todos"),
             format_func=lambda c: f"{' · '.join(opciones[c][0])} ({len(opciones[c][1]['adrs'])})",
             key="adr_proyecto",
+            on_change=_proyecto_adr_a_url,
             label_visibility="collapsed",
             width=420,
         )
@@ -1716,13 +1690,14 @@ def render_adr() -> None:
             format_func=lambda o: t("adr.filtro.en_curso") if o == "en_curso" else _nombre_estado(o),
             label_visibility="collapsed",
             key="adr_filtros",
+            bind="query-params",
             width="content",
         )
 
-    buscado = texto.strip().lower()
+    buscado = texto.strip().casefold()
 
     def _pasa(nombres_grupo: list[str], f: dict) -> bool:
-        if buscado and buscado not in " ".join([*nombres_grupo, f["numero"], f["titulo"]]).lower():
+        if buscado and buscado not in " ".join([*nombres_grupo, f["numero"], f["titulo"]]).casefold():
             return False
         if not seleccion:
             return True
@@ -1781,8 +1756,23 @@ def render_adr() -> None:
     st.caption(t("adr.leyenda_issues"))
 
 
+# Una página de función por apartado, con url_path fijo (la de por defecto va en /): al recargar
+# o abrir un enlace se vuelve al mismo apartado. El menú se pinta a mano para que vayan antes el título y la frase.
+PAGINAS = [
+    st.Page(render_proyectos, title=t("pagina.Lanzadera"), icon=":material/apps:", default=True),
+    st.Page(render_adr, title=t("pagina.ADR"), icon=":material/gavel:", url_path="adr"),
+    st.Page(render_enlaces, title=t("pagina.Enlaces"), icon=":material/link:", url_path="enlaces"),
+    st.Page(render_vps, title=t("pagina.VPS"), icon=":material/dns:", url_path="vps"),
+    st.Page(render_local, title=t("pagina.Local"), icon=":material/memory:", url_path="local"),
+]
+pagina = st.navigation(PAGINAS, position="hidden")
+st.set_page_config(page_title=f"{pagina.title} · {TITULO_APP}")
+
 with st.sidebar:
-    pagina = st.radio(t("menu"), MENU, key="pagina", format_func=lambda p: t(f"pagina.{p}"))
+    st.title(t("app.nombre"), anchor=False)
+    st.caption(t("app.frase"))
+    for p in PAGINAS:
+        st.page_link(p)
     st.segmented_control(
         t("idioma"),
         list(paths.IDIOMAS),
@@ -1794,13 +1784,4 @@ with st.sidebar:
     if DEMO:
         st.caption(t("demo.repo", url=REPO_PUBLICO))
 
-if pagina == "Lanzadera":
-    render_proyectos()
-elif pagina == "ADR":
-    render_adr()
-elif pagina == "Enlaces":
-    render_enlaces()
-elif pagina == "VPS":
-    render_vps()
-else:
-    render_local()
+pagina.run()

@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from conftest import ir_a
 from streamlit.testing.v1 import AppTest
 
 import vps
@@ -88,7 +89,7 @@ def test_pagina_vps_consulta_al_entrar_y_al_refrescar(monkeypatch):
     monkeypatch.setattr(vps, "consultar", consultar)
     at = AppTest.from_file(str(Path(__file__).parent.parent / "app.py"), default_timeout=30)
     at.run()
-    at.sidebar.radio[0].set_value("VPS").run()
+    ir_a(at, "vps")
     assert not at.exception
     assert [c.value for c in at.code] == ["host     vps", "       total\nMem:    3.8Gi", "(sin salida)"]
     at.run()

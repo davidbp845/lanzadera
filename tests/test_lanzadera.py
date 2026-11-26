@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 import streamlit as st
+from conftest import ir_a
 from streamlit.testing.v1 import AppTest
 
 import ram
@@ -50,8 +51,7 @@ def lanzadera(monkeypatch):
 
 def _abrir(buscar=""):
     at = AppTest.from_file(APP, default_timeout=30)
-    # El buscador es un componente propio: AppTest no lo teclea, se le da su estado.
-    at.session_state["buscar_proyecto"] = {"value": buscar}
+    at.session_state["buscar_proyecto"] = buscar
     return at.run()
 
 
@@ -216,7 +216,13 @@ def test_el_interruptor_de_la_cabecera_sin_filas_arrancables_esta_deshabilitado(
 
 
 def test_menu_sin_negocios(lanzadera):
-    assert _abrir().sidebar.radio[0].options == ["Lanzadera", "ADR", "Enlaces", "VPS", "Local"]
+    assert [enlace.value for enlace in _abrir().sidebar.get("page_link")] == [
+        "Lanzadera",
+        "ADR",
+        "Enlaces",
+        "VPS",
+        "Local",
+    ]
 
 
 @pytest.fixture
@@ -244,7 +250,7 @@ def test_sin_negocios_local_mide_solo_los_proyectos(sin_negocios, monkeypatch):
 
     monkeypatch.setattr(ram, "consultar", consultar)
     at = _abrir()
-    at.sidebar.radio(key="pagina").set_value("Local").run()
+    ir_a(at, "local")
     assert not at.exception
     assert medidos == ["esta", "simple", "multi"]
 
@@ -267,7 +273,7 @@ def test_local_mide_los_negocios_o_el_single(lanzadera, monkeypatch, listar, fil
 
     monkeypatch.setattr(ram, "consultar", consultar)
     at = _abrir()
-    at.sidebar.radio(key="pagina").set_value("Local").run()
+    ir_a(at, "local")
     assert not at.exception
     assert [p["slug"] for p in medidos] == ["esta", "simple", "multi", fila]
     assert [puerto for _etiqueta, puerto, *_ in medidos[-1].get("enlaces", [])] == puertos
@@ -322,7 +328,7 @@ def test_parar_un_proyecto_sin_puerto_termina_sus_procesos(con_proceso, monkeypa
 def test_adr_sin_proyectos_con_adr_lo_explica(lanzadera, monkeypatch, tmp_path):
     monkeypatch.setenv("HOME_LAUNCHER_RAIZ", str(tmp_path))
     at = _abrir()
-    at.sidebar.radio(key="pagina").set_value("ADR").run()
+    ir_a(at, "adr")
     assert not at.exception
     assert at.info[0].value == "Ningún proyecto del registro tiene ADR en `doc/A2-ADR/`."
 

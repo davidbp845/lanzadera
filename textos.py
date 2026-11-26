@@ -7,7 +7,8 @@ Los huecos `{nombre}` se rellenan con `str.format`.
 TEXTOS = {
     "es": {
         # Menú y lateral
-        "menu": "Menú",
+        "app.nombre": "Lanzadera",
+        "app.frase": "Arranca, para y enlaza las apps locales",
         "pagina.Lanzadera": "Lanzadera",
         "pagina.Enlaces": "Enlaces",
         "pagina.VPS": "VPS",
@@ -77,6 +78,7 @@ TEXTOS = {
         "eje.estado": "Estado",
         "eje.issues": "Issues",
         # Lanzadera: filtros y tabla
+        "buscar": "Buscar",
         "buscar.proyecto": "Buscar por nombre, ruta o puerto",
         "buscar.adr": "Buscar por proyecto, número o decisión",
         "filtro.activo": "activo",
@@ -178,7 +180,8 @@ TEXTOS = {
         "backend_comun": "Backend común",
     },
     "en": {
-        "menu": "Menu",
+        "app.nombre": "Launchpad",
+        "app.frase": "Starts, stops and links local apps",
         "pagina.Lanzadera": "Launchpad",
         "pagina.Enlaces": "Links",
         "pagina.VPS": "VPS",
@@ -244,6 +247,7 @@ TEXTOS = {
         "eje.proyecto": "Project",
         "eje.estado": "Status",
         "eje.issues": "Issues",
+        "buscar": "Search",
         "buscar.proyecto": "Search by name, path or port",
         "buscar.adr": "Search by project, number or decision",
         "filtro.activo": "running",

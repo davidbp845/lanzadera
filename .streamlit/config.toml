@@ -3,12 +3,19 @@ port = 8501
 address = "127.0.0.1"  # solo local: el panel arranca y para procesos y no tiene autenticación
 headless = true       # no intenta abrir el navegador
 
+[browser]
+gatherUsageStats = false
+
 # Claro y oscuro: con los dos definidos, el panel sigue al sistema y el menú deja cambiarlo.
 [theme.light]
 primaryColor = "#F63366"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F0F2F6"
 textColor = "#262730"
+
+# El gris azulado anterior a la 1.67, el mismo menú que en las demás apps.
+[theme.light.sidebar]
+backgroundColor = "#F0F2F6"
 
 [theme.dark]
 primaryColor = "#F63366"

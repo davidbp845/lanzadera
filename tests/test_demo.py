@@ -6,6 +6,7 @@ from pathlib import Path
 import psutil
 import pytest
 import streamlit as st
+from conftest import ir_a
 from streamlit.testing.v1 import AppTest
 
 import actividad
@@ -31,7 +32,15 @@ def modo_demo(monkeypatch):
     monkeypatch.delenv("HOME_LAUNCHER_IDIOMA", raising=False)
     for nombre in ["run", "Popen", "check_output", "check_call", "call"]:
         monkeypatch.setattr(subprocess, nombre, prohibido)
-    monkeypatch.setattr(socket, "socket", prohibido)
+    socket_real = socket.socket
+
+    def socket_prohibido(family=socket.AF_INET, *args, **kwargs):
+        # AppTest abre un par de sockets locales para su bucle de eventos; los de red no.
+        if family == socket.AF_UNIX:
+            return socket_real(family, *args, **kwargs)
+        return prohibido()
+
+    monkeypatch.setattr(socket, "socket", socket_prohibido)
     for nombre in ["process_iter", "net_connections", "Process", "virtual_memory"]:
         monkeypatch.setattr(psutil, nombre, prohibido)
     st.cache_data.clear()
@@ -39,11 +48,15 @@ def modo_demo(monkeypatch):
 
 def _abrir(pagina="Lanzadera"):
     at = AppTest.from_file(APP, default_timeout=30)
-    at.session_state["buscar_proyecto"] = {"value": ""}
     at.run()
     if pagina != "Lanzadera":
-        at.sidebar.radio(key="pagina").set_value(pagina).run()
+        ir_a(at, pagina.lower())
     return at
+
+
+def _tabla(at):
+    # La última tabla pintada; la regla de las leyendas también es un st.html y va al final.
+    return [h.proto.body for h in at.get("html") if "stCaptionContainer" not in h.proto.body][-1]
 
 
 @pytest.mark.parametrize("idioma", ["en", "es"])
@@ -60,7 +73,7 @@ def test_las_paginas_de_la_demo_no_ejecutan_nada(modo_demo, monkeypatch, pagina,
 def test_la_demo_empieza_en_ingles_con_los_interruptores_deshabilitados(modo_demo):
     at = _abrir()
     assert at.title[0].value == "Launchpad"
-    assert at.sidebar.radio(key="pagina").options == ["Launchpad", "ADRs", "Links", "VPS", "Local"]
+    assert [enlace.value for enlace in at.sidebar.get("page_link")] == ["Launchpad", "ADRs", "Links", "VPS", "Local"]
     assert at.toggle and all(toggle.disabled for toggle in at.toggle)
 
 
@@ -70,29 +83,39 @@ def test_los_graficos_siguen_plegados_al_volver_de_otra_pagina(modo_demo):
     # Un botón en cada tarjeta: cualquiera de los dos pliega las dos.
     at.button(key="plegar_actividad").click().run()
     assert not at.get("vega_lite_chart")
-    at.sidebar.radio(key="pagina").set_value("VPS").run()
-    at.sidebar.radio(key="pagina").set_value("Lanzadera").run()
+    ir_a(at, "vps")
+    ir_a(at, "")
     assert not at.get("vega_lite_chart")
     at.button(key="plegar_issues").click().run()
     assert len(at.get("vega_lite_chart")) == 2
 
 
+def test_el_proyecto_de_adr_se_guarda_en_la_url_y_sale_de_ella(modo_demo):
+    at = _abrir("ADR")
+    at.selectbox(key="adr_proyecto").select_index(1).run()
+    assert at.query_params["proyecto"] == "budget"
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.query_params["proyecto"] = "budget"
+    ir_a(at.run(), "adr")
+    assert at.selectbox(key="adr_proyecto").value == "budget"
+
+
 def test_la_tabla_de_adr_muestra_todas_y_filtra_por_estado(modo_demo):
     at = _abrir("ADR")
     assert at.selectbox(key="adr_proyecto").value is None
-    tabla = at.get("html")[-1].proto.body
+    tabla = _tabla(at)
     assert '>Project<span class="flecha"' in tabla
     # De más a menos issues abiertos: las de un issue abierto van antes que las sin issues.
     assert tabla.index("Rules valid per year") < tabla.index("CSV files as storage")
     at.pills(key="adr_filtros").set_value(["en_curso"]).run()
-    tabla = at.get("html")[-1].proto.body
+    tabla = _tabla(at)
     assert "Rules valid per year" in tabla
     assert "Batch export to the phone" not in tabla
     assert "Archive what's resolved" not in tabla
     at.pills(key="adr_filtros").set_value([]).run()
-    at.session_state["buscar_adr"] = {"value": "telegram"}
+    at.session_state["buscar_adr"] = "telegram"
     at.run()
-    tabla = at.get("html")[-1].proto.body
+    tabla = _tabla(at)
     assert "Telegram bot" in tabla
     assert "Rules valid per year" not in tabla
 
@@ -295,7 +318,7 @@ def test_la_pagina_adr_de_la_demo_marca_la_propuesta_con_los_issues_cerrados(mod
     assert "Full-text search with SQLite FTS5" in revisar
     at.selectbox(key="adr_proyecto").select("notes").run()
     assert not at.exception
-    assert "Proposed with all its issues closed" in at.get("html")[-1].proto.body
+    assert "Proposed with all its issues closed" in _tabla(at)
 
 
 @pytest.mark.parametrize(
@@ -311,7 +334,6 @@ def test_la_pagina_adr_de_la_demo_marca_la_propuesta_con_los_issues_cerrados(mod
 )
 def test_las_pildoras_de_orden_dejan_solo_las_filas_con_tablero_ordenadas(modo_demo, orden, esperado):
     at = AppTest.from_file(APP, default_timeout=30)
-    at.session_state["buscar_proyecto"] = {"value": ""}
     at.session_state["orden_lanzadera"] = orden
     at.run()
     assert not at.exception
