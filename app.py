@@ -1845,7 +1845,8 @@ PAGINAS = [
     st.Page(render_local, title=t("pagina.Local"), icon=":material/memory:", url_path="local"),
 ]
 pagina = st.navigation(PAGINAS, position="hidden")
-st.set_page_config(page_title=f"{pagina.title} · {TITULO_APP}")
+# La página principal se llama como la app: solo el nombre, sin repetirlo.
+st.set_page_config(page_title=TITULO_APP if pagina is PAGINAS[0] else f"{pagina.title} · {TITULO_APP}")
 
 with st.sidebar:
     st.title(t("app.nombre"), anchor=False)
