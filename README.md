@@ -21,7 +21,7 @@ A local launcher for the Streamlit apps (and anything else that listens on a por
 
 ## Pages
 
-- **Launchpad**: two collapsible charts (open issues per status, commit activity), then one row per project with its port, status, links, GitHub repo and board counts, and an on/off switch. Search by name, path or port; filter by folder, app type and status; sort by issues in a board column.
+- **Launchpad**: two collapsible charts (open issues per status, commit activity), then one row per project with its priority, port, status, links, GitHub repo and board counts, and an on/off switch. Search by name, path or port; filter by folder, app type and status; sort by any column header or by issues in a board column. Sorted by priority, each row gets ↑/↓ arrows to raise or lower it.
 - **ADRs**: the architecture decisions of every project, read from its `doc/A2-ADR/`: a chart per project and status, the proposals whose issues are all closed, and per project a table with each decision, its status and its linked issues, open or closed.
 - **Links**: your bookmarks as a searchable table with tag filters.
 - **VPS**: memory, disk, load and failed-services meters over the raw output of a fixed, read-only script sent over SSH.
@@ -68,6 +68,8 @@ enlaces = [                  # optional: one link per service, and the switch wa
 A link can carry its own `tipo` when its service uses another framework (a Streamlit panel inside an Astro project): the row also shows under that pill, and with that pill active it shows only the links of that type. A project without `cmd` is the launcher itself. A project without `puerto` but with `proceso` (text from its process's command line, such as its script name) is running while some process carries that text: useful for resident scripts with no port. A project with neither has no app: its row only shows its GitHub repo and board, with no state or switch. The GitHub links, board and activity come from `ruta`, or from the optional `ruta_github` when the repo lives elsewhere (a project started from another project's code); `ruta_github = false` hides them for a project that is part of another one. The `[negocios]` section (a group of multi-tenant "business" rows driven by another project's `dev_up.sh`) is specific to the author's setup and optional: Its rows have type `heruka-flow`; without it there are no business rows and no `heruka-flow` filter. [`demo/proyectos.toml`](demo/proyectos.toml) has a minimal one.
 
 **`enlaces.csv`**: `descripcion,enlace,etiquetas`, with several tags separated by `;`. Other apps add a row with `python3 scripts/anadir_enlace.py "description" "url" "tag1;tag2"`: it rejects URLs without `http(s)://` and duplicates (exit code `1`) and never commits.
+
+**`prioridades.toml`**: `"slug" = 1..5` per row (5 is the highest), written only by the panel's arrows; it never commits. Rows without an entry have no priority.
 
 **`vps.toml`**: `[[vps]]` entries with `nombre` and `host`, an alias from `~/.ssh/config`. Credentials never go in the file. What runs on the server is always [`scripts/estado_vps.sh`](scripts/estado_vps.sh), read-only.
 
