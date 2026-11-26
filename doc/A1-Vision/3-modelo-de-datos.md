@@ -1,6 +1,6 @@
 # 3. Modelo de datos
 
-Tres ficheros en `datos/` del contenedor, leídos vía `config/paths.py` (`HOME_LAUNCHER_DATOS` o `../datos`; en la demo, `demo/` del repo, con el mismo formato).
+Cuatro ficheros en `datos/` del contenedor, leídos vía `config/paths.py` (`HOME_LAUNCHER_DATOS` o `../datos`; en la demo, `demo/` del repo, con el mismo formato).
 
 ## Registro de proyectos — `datos/proyectos.toml`
 
@@ -46,6 +46,12 @@ En memoria, `cargar()` devuelve los proyectos como dicts con `path` (ruta absolu
 | `etiquetas` | Cero o más etiquetas separadas por `;` (`Heruka;Calendar`) |
 
 Las etiquetas son libres. El color de cada una sale de una paleta fija por orden alfabético, así que puede cambiar al añadir una etiqueta nueva.
+
+## Prioridades — `datos/prioridades.toml`
+
+Cargado por `config/prioridades.py:cargar()`; lo escribe solo el panel, con las flechas de la columna Prioridad de la Lanzadera ([ADR-0023](../A2-ADR/0023-prioridad-de-cada-fila.md)). Una línea `"<slug>" = <prioridad>` por fila, ordenadas por slug, con la prioridad de 1 a 5 (5 lo más prioritario). El slug es el de cada `[[proyecto]]` y `[negocios.single]`, `negocios` para la fila de todos los negocios y el id de cada negocio multi-tenant. Sin fichero o sin línea, la fila no tiene prioridad; un valor que no es un entero de 1 a 5 se ignora. Cada clic deja el fichero modificado en el contenedor, sin commit.
+
+En la demo, `demo/prioridades.toml` da los valores de partida y las flechas solo los cambian en la sesión.
 
 ## Servidores — `datos/vps.toml`
 
