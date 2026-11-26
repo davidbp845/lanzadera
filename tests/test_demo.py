@@ -318,3 +318,14 @@ def test_las_pildoras_de_orden_dejan_solo_las_filas_con_tablero_ordenadas(modo_d
     nombres = [m.value for m in at.markdown if m.value.startswith("**") and m.value != "**GitHub**"]
     assert len(nombres) == 9  # sin AI agents course ni Business bloom, que no tienen tablero
     assert nombres[:6] == [f"**{n}**" for n in esperado]
+
+
+def test_en_la_demo_las_flechas_de_prioridad_no_escriben(modo_demo):
+    fichero = paths.DEMO / "prioridades.toml"
+    antes = fichero.read_text(encoding="utf-8")
+    at = _abrir()
+    at.button(key="orden_prioridad").click().run()
+    at.button(key="prioridad_bajar_mail").click().run()
+    assert not at.exception
+    assert at.session_state["prioridades_demo"]["mail"] == 4
+    assert fichero.read_text(encoding="utf-8") == antes

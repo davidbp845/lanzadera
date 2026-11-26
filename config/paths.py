@@ -44,3 +44,7 @@ def enlaces() -> Path:
 
 def vps() -> Path:
     return datos() / "vps.toml"
+
+
+def prioridades() -> Path:
+    return datos() / "prioridades.toml"

@@ -1,0 +1,6 @@
+# Priority of each Launchpad row (1 to 5, 5 the highest), by slug or business id.
+"acme" = 4
+"budget" = 3
+"mail" = 5
+"notes" = 2
+"jobs" = 3

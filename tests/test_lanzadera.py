@@ -10,6 +10,7 @@ import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 import ram
+from config import prioridades
 
 FIXTURES = Path(__file__).parent / "fixtures"
 APP = str(Path(__file__).parent.parent / "app.py")
@@ -365,3 +366,50 @@ def test_ordenar_por_cabecera_quita_el_orden_por_issues(lanzadera):
     at.session_state["orden_lanzadera"] = "↓ Ready"
     at.button(key="orden_puerto").click().run()
     assert at.session_state["orden_lanzadera"] is None
+
+
+@pytest.fixture
+def con_prioridades(lanzadera, monkeypatch, tmp_path):
+    """La carpeta de fixtures copiada a una temporal, con prioridades: las flechas escriben ahí."""
+    for fichero in FIXTURES.iterdir():
+        (tmp_path / fichero.name).write_bytes(fichero.read_bytes())
+    (tmp_path / "prioridades.toml").write_text("simple = 2\nmulti = 5\na = 2\n", encoding="utf-8")
+    monkeypatch.setenv("HOME_LAUNCHER_DATOS", str(tmp_path))
+    return tmp_path / "prioridades.toml"
+
+
+@pytest.mark.parametrize(
+    ("clics", "esperado"),
+    [
+        # El primer clic, de más a menos; sin prioridad, al final; a igualdad, el orden del registro.
+        (1, ["Multi", "Simple", "Negocio a", "Esta app", "Docs", "Heruka Flow", "Negocio b"]),
+        (2, ["Simple", "Negocio a", "Multi", "Esta app", "Docs", "Heruka Flow", "Negocio b"]),
+        (3, ["Esta app", "Simple", "Multi", "Docs", "Heruka Flow", "Negocio a", "Negocio b"]),
+    ],
+)
+def test_la_cabecera_prioridad_empieza_de_mas_a_menos(con_prioridades, clics, esperado):
+    at = _abrir()
+    for _ in range(clics):
+        at.button(key="orden_prioridad").click().run()
+    assert not at.exception
+    assert _nombres(at) == [f"**{n}**" for n in esperado]
+
+
+def test_las_flechas_solo_salen_ordenando_por_prioridad(con_prioridades):
+    at = _abrir()
+    assert not any(b.key == "prioridad_subir_multi" for b in at.button)
+    at.button(key="orden_prioridad").click().run()
+    assert at.button(key="prioridad_subir_multi").disabled  # ya está en 5
+    assert at.button(key="prioridad_bajar_docs").disabled  # sin prioridad
+    assert not at.button(key="prioridad_subir_docs").disabled
+
+
+def test_las_flechas_cambian_la_prioridad_y_la_guardan(con_prioridades):
+    at = _abrir()
+    at.button(key="orden_prioridad").click().run()
+    at.button(key="prioridad_subir_simple").click().run()
+    at.button(key="prioridad_subir_docs").click().run()
+    at.button(key="prioridad_bajar_a").click().run()
+    assert not at.exception
+    assert prioridades.cargar(con_prioridades) == {"simple": 3, "multi": 5, "a": 1, "docs": 1}
+    assert _nombres(at)[:4] == ["**Multi**", "**Simple**", "**Docs**", "**Negocio a**"]

@@ -20,7 +20,7 @@ import negocios as negocios_hf
 import ram
 import textos
 import vps
-from config import paths
+from config import paths, prioridades
 from config.proyectos import cargar as cargar_registro
 from config.proyectos import url_enlace
 from config.vps import cargar as cargar_servidores
@@ -66,9 +66,11 @@ CON_NEGOCIOS = HERUKA_FLOW is not None
 # `dev_up.sh --listar`).
 RUTAS_REPOS = [p["path_github"] for p in PROYECTOS if p["path_github"]] + ([HERUKA_FLOW] if CON_NEGOCIOS else [])
 ENLACES_CSV = paths.enlaces()
+# Slug de la fila de todos los negocios (la de heruka-flow): su GitHub en la demo y su prioridad.
+SLUG_NEGOCIOS = "negocios"
 # En la demo, el GitHub de cada proyecto se busca por su slug en demo/estado.toml.
 SLUG_POR_RUTA = {str(p["path_github"]): p["slug"] for p in PROYECTOS if p["path_github"]} | (
-    {str(HERUKA_FLOW): "negocios"} if CON_NEGOCIOS else {}
+    {str(HERUKA_FLOW): SLUG_NEGOCIOS} if CON_NEGOCIOS else {}
 )
 
 
@@ -195,9 +197,10 @@ def cargar_enlaces() -> pd.DataFrame:
     return df
 
 
-# Proyecto · puerto · estado · enlaces · GitHub · interruptor (cabecera y filas).
+# Proyecto · prioridad · puerto · estado · enlaces · GitHub · interruptor (cabecera y filas).
 # GitHub, la más ancha: repositorio · tablero y cinco pastillas tienen que caber en una línea.
-COLUMNAS_LANZADERA = [2.4, 0.8, 1.2, 1.6, 4, 0.6]
+# Prioridad, lo justo para «↑ 5 ↓» cuando la tabla se ordena por ella.
+COLUMNAS_LANZADERA = [2.4, 1, 0.8, 1.2, 1.6, 4, 0.6]
 
 
 @st.cache_data(ttl=3600)
@@ -508,6 +511,7 @@ def _orden_proyecto(proyecto: dict, activo: bool | None) -> dict:
     sin_app = proyecto["puerto"] is None and not proyecto["proceso"]
     return {
         "proyecto": proyecto["nombre"],
+        "prioridad": _prioridades().get(proyecto["slug"]),
         "puerto": proyecto["puerto"],
         # Esta app sale siempre como activa, aunque su puerto no responda (p. ej. en los tests).
         "estado": None if sin_app else proyecto["cmd"] is None or bool(activo),
@@ -515,11 +519,62 @@ def _orden_proyecto(proyecto: dict, activo: bool | None) -> dict:
     }
 
 
+# En la demo, las flechas cambian la prioridad solo en la sesión (ADR-0010, ADR-0023).
+PRIORIDADES_DEMO = "prioridades_demo"
+
+
+def _prioridades() -> dict[str, int]:
+    # Se relee en cada rerun, como el registro: un cambio hecho a mano se ve al refrescar.
+    if DEMO:
+        return st.session_state.setdefault(PRIORIDADES_DEMO, prioridades.cargar(paths.prioridades()))
+    return prioridades.cargar(paths.prioridades())
+
+
+def _cambiar_prioridad(slug: str, paso: int) -> None:
+    nuevas = prioridades.cambiar(_prioridades(), slug, paso)
+    if DEMO:
+        st.session_state[PRIORIDADES_DEMO] = nuevas
+    else:
+        prioridades.guardar(paths.prioridades(), nuevas)
+
+
+def _pintar_prioridad(columna, slug: str) -> None:
+    valor = _prioridades().get(slug)
+    orden = st.session_state.get(ORDEN_COLUMNA)
+    if not (orden and orden[0] == "prioridad"):
+        columna.markdown(":gray[—]" if valor is None else str(valor))
+        return
+    # Flechas solo con la tabla ordenada por prioridad: así se ve dónde cae la fila al moverla.
+    with columna, st.container(horizontal=True, vertical_alignment="center", gap="xsmall"):
+        st.button(
+            "",
+            icon=":material/arrow_upward:",
+            key=f"prioridad_subir_{slug}",
+            help=t("prioridad.subir"),
+            type="tertiary",
+            disabled=valor == prioridades.MAXIMA,
+            on_click=_cambiar_prioridad,
+            args=(slug, 1),
+        )
+        st.markdown(":gray[—]" if valor is None else str(valor), width="content")
+        st.button(
+            "",
+            icon=":material/arrow_downward:",
+            key=f"prioridad_bajar_{slug}",
+            help=t("prioridad.bajar"),
+            type="tertiary",
+            disabled=valor is None or valor == prioridades.MINIMA,
+            on_click=_cambiar_prioridad,
+            args=(slug, -1),
+        )
+
+
 def _render_proyecto(proyecto: dict, activo: bool | None, tipo_fila: str | None = None, tipos=()) -> None:
-    nombre, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
+    nombre, prioridad, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
         COLUMNAS_LANZADERA, vertical_alignment="center"
     )
     nombre.markdown(f"**{proyecto['nombre']}**")
+    _pintar_prioridad(prioridad, proyecto["slug"])
     if proyecto["puerto"] is None and not proyecto["proceso"]:
         for columna in (puerto, estado, enlaces, interruptor):
             columna.markdown(":gray[—]")
@@ -629,10 +684,11 @@ def iniciar_negocios(seleccion: list[dict], todos: list[dict]) -> None:
 
 
 def _render_negocios_todos(negocios: list[dict], activos: list[dict]) -> None:
-    nombre, _puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
+    nombre, prioridad, _puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
         COLUMNAS_LANZADERA, vertical_alignment="center"
     )
     nombre.markdown(f"**{t('todos_negocios')}**")
+    _pintar_prioridad(prioridad, SLUG_NEGOCIOS)
     estado.markdown(t("estado.activo") if activos else t("estado.parado"))
     enlaces.markdown(", ".join(n["id"] for n in activos))
     _pintar_github(enlaces_github, HERUKA_FLOW)
@@ -656,10 +712,11 @@ def _enlaces_negocio(negocio: dict) -> list[tuple]:
 
 def _render_negocio(negocio: dict, negocios: list[dict], activos: list[dict], tipos=()) -> None:
     activo = negocio in activos
-    nombre, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
+    nombre, prioridad, puerto, estado, enlaces, enlaces_github, interruptor = st.columns(
         COLUMNAS_LANZADERA, vertical_alignment="center"
     )
     nombre.markdown(f"**{t('negocio', id=negocio['id'])}**")
+    _pintar_prioridad(prioridad, negocio["id"])
     puerto.markdown(str(negocio["panel"]))
     estado.markdown(t("estado.activo") if activo else t("estado.parado"))
     if activo:
@@ -712,6 +769,7 @@ def _filas_lanzadera() -> list[dict]:
         # como un proyecto.
         heruka_flow = {
             "nombre": t("todos_negocios"),
+            "slug": SLUG_NEGOCIOS,
             "path_github": HERUKA_FLOW,
             "puerto": None,
             "proceso": None,
@@ -757,6 +815,7 @@ def _filas_lanzadera() -> list[dict]:
             **de_negocios,
             "orden": {
                 "proyecto": t("todos_negocios"),
+                "prioridad": _prioridades().get(SLUG_NEGOCIOS),
                 "puerto": None,
                 "estado": bool(activos),
                 "enlaces": ", ".join(n["id"] for n in activos) or None,
@@ -776,6 +835,7 @@ def _filas_lanzadera() -> list[dict]:
                 **de_negocios,
                 "orden": {
                     "proyecto": t("negocio", id=negocio["id"]),
+                    "prioridad": _prioridades().get(negocio["id"]),
                     "puerto": negocio["panel"],
                     "estado": negocio in activos,
                     "enlaces": "Frontend · Panel · API" if negocio in activos else None,
@@ -897,6 +957,7 @@ def _graficos_lanzadera() -> None:
 # Cabeceras ordenables de la Lanzadera: clave en fila["orden"] -> texto de la cabecera.
 COLUMNAS_ORDENABLES = {
     "proyecto": "col.proyecto_app",
+    "prioridad": "col.prioridad",
     "puerto": "col.puerto",
     "estado": "col.estado",
     "enlaces": "col.enlaces",
@@ -906,13 +967,18 @@ FLECHA = {"asc": "▲", "desc": "▼"}
 ORDEN_COLUMNA = "orden_columna_lanzadera"
 
 
+# La prioridad se mira de más a menos: su primer clic es el descendente.
+PRIMER_SENTIDO = {"prioridad": "desc"}
+
+
 def _cambiar_orden_columna(clave: str) -> None:
-    """Ascendente, descendente y vuelta al orden del registro, como la tabla de ADR."""
+    """Primer sentido, el contrario y vuelta al orden del registro, como la tabla de ADR."""
     actual = st.session_state.get(ORDEN_COLUMNA)
+    primero = PRIMER_SENTIDO.get(clave, "asc")
     if not actual or actual[0] != clave:
-        st.session_state[ORDEN_COLUMNA] = (clave, "asc")
-    elif actual[1] == "asc":
-        st.session_state[ORDEN_COLUMNA] = (clave, "desc")
+        st.session_state[ORDEN_COLUMNA] = (clave, primero)
+    elif actual[1] == primero:
+        st.session_state[ORDEN_COLUMNA] = (clave, "asc" if primero == "desc" else "desc")
     else:
         st.session_state.pop(ORDEN_COLUMNA)
     # Excluyente con las píldoras de orden por issues: dos órdenes a la vez no se explican.
@@ -1043,10 +1109,11 @@ def render_proyectos() -> None:
 [class*="st-key-fila_"] [data-testid="stMarkdownContainer"] p { margin: 0; }
 /* Sin hueco entre filas: si no, las blancas parecen más altas que las de la cebra. */
 .st-key-tabla_lanzadera { gap: 0; }
-/* Puerto, estado e interruptor no se parten en pantallas estrechas ("850" / "1"). */
+/* Prioridad, puerto, estado e interruptor no se parten en pantallas estrechas ("850" / "1"). */
 [class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(2),
 [class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(3),
-[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(6),
+[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(4),
+[class*="st-key-fila_"] [data-testid="stColumn"]:nth-child(7),
 .st-key-cabecera_lanzadera [data-testid="stColumn"] { white-space: nowrap; }
 .st-key-cabecera_lanzadera { background: rgba(246, 51, 102, 0.12); }
 /* Las cabeceras ordenables son botones terciarios: en negrita y sin relleno, como GitHub. */
